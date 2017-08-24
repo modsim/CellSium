@@ -14,18 +14,18 @@ class MeshOutput(Output):
     def output(self):
         meshes = []
 
-        for boundary in self.boundaries:
+        for boundary in world.boundaries:
             pass
 
-        for cell in self.cells:
+        for cell in world.cells:
             vertices, triangles = cell.points3d_on_canvas()
 
             meshes.append(dict(vertices=vertices, triangles=triangles))
 
         return meshes
 
-    def write(self, file_name):
-        meshes = self.output()
+    def write(self, world, file_name):
+        meshes = self.output(world)
 
         stl_meshes = []
 

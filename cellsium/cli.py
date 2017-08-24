@@ -6,7 +6,7 @@ from time import time
 from tunable import Tunable, TunableSelectable
 
 from . import Width, Height, Calibration
-from .model import PlacedCell
+from .model import PlacedCell, SimulatedCell
 from .random import RRF
 
 from .simulation.placement import PlacementSimulation
@@ -27,41 +27,25 @@ class BoundariesFile(Tunable):
     default = ""
 
 
+from .simulation.simulator import *
 
 
+def add_boundaries_from_dxf(file_name, simulator):
+    import ezdxf
 
-class Simulation(object):
-    def __init__(self):
-        self.cells = set()
-        self.boundaries = set()
+    dxf = ezdxf.readfile(file_name)
 
+    for item in dxf.modelspace():
+        points = None
+        if item.dxftype() == 'LWPOLYLINE':
+            points = np.array(list(item.get_points()))[:, :2]
+            points = points / 32 * 40
+        elif item.dxftype() == 'POLYLINE':
+            points = np.array(list(item.points()))
+        else:
+            print("Warning, unknown type", item.dxftype())
 
-
-class Simulator(object):
-    def __init__(self):
-        self.cells = set()
-        self.sync = []
-
-    def add(self, cell):
-        self.cells.add(cell)
-        for other in self.sync:
-            other.add(cell)
-
-    def remove(self, cell):
-        self.cells.remove(cell)
-        for other in self.sync:
-            other.remove(cell)
-
-    def sync_add(self, other):
-        self.each_cell(other.add)
-        self.sync.append(other)
-
-    def cells(self):
-        return iter(self.cells)
-
-    def each_cell(self, callback):
-        for cell in self.cells:
-            callback(cell)
+        simulator.add_boundary(points)
 
 
 def main():
@@ -77,7 +61,10 @@ def main():
 
     cpg = CellParameterGenerator()
 
-    CellType = PlacedCell
+    class Cell(PlacedCell, SimulatedCell):
+        pass
+
+    CellType = Cell
 
     def new_cell():
         length, width = 1, 2
@@ -97,56 +84,28 @@ def main():
         )
 
     simulator = Simulator()
+    ps = PlacementSimulation()
 
+    simulator.sub_simulators += [ps]
+
+    if BoundariesFile.value != '':
+        add_boundaries_from_dxf(BoundariesFile.value, simulator)
 
     for _ in range(NewCellCount.value):
         simulator.add(new_cell())
 
-    ps = PlacementSimulation()
-
-    simulator.:
-        ps.add(cell)
-
-    before = time()
-
-    boundaries = []
-
-    if BoundariesFile.value != '':
-        import ezdxf
-
-        dxf = ezdxf.readfile(BoundariesFile.value)
-
-        for item in dxf.modelspace():
-            points = None
-            if item.dxftype() == 'LWPOLYLINE':
-                points = np.array(list(item.get_points()))[:, :2]
-                points = points / 32 * 40
-            elif item.dxftype() == 'POLYLINE':
-                points = np.array(list(item.points()))
-            else:
-                print("Warning, unknown type", item.dxftype())
-
-            boundaries.append(points)
-
-    def add_boundaries_to(to, what):
-        for w in what:
-            to.add_boundary(w)
-
-    add_boundaries_to(ps, boundaries)
-
-    ps.simulate(time_step=0.1, epsilon=0.0000000001)
-
-    after = time()
-    print("Simulation time %.2fs" % (after - before))
-
     output = Output()
 
-    add_boundaries_to(output, boundaries)
+    for n in range(0, 24):
+        for _ in range(60):
+            before = time()
+            simulator.step(60.0)
+            after = time()
+            print("Simulation time %.2fs" % (after - before))
 
-    for cell in cells:
-        output.add(cell)
+        output.display(simulator.simulation.world)
 
     if args.output:
-        output.write(args.output)
+        output.write(simulator.simulation.world, args.output)
     else:
-        output.display()
+        output.display(simulator.simulation.world)

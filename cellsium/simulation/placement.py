@@ -4,7 +4,7 @@ import pymunk
 
 import numpy as np
 
-from . import Simulator
+from . import BaseSimulator
 
 from tunable import Tunable
 
@@ -13,7 +13,7 @@ class PlacementRadius(Tunable):
     default = 0.05
 
 
-class PlacementSimulation(Simulator):
+class PlacementSimulation(BaseSimulator):
 
     verbose = False
 
@@ -64,7 +64,7 @@ class PlacementSimulation(Simulator):
         self.space.add(body, shape)
 
     def remove(self, cell):
-        self.space.remove(body, shape)
+        self.space.remove(self.cell_bodies[cell], self.cell_shapes[cell])
 
         del self.cell_bodies[cell]
         del self.cell_shapes[cell]
@@ -87,19 +87,79 @@ class PlacementSimulation(Simulator):
     def _mean_distance(cls, before, after):
         return cls._all_distances(before, after).mean()
 
-    def simulate(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
+    def step(self, timestep):
+
+        if False:
+            from matplotlib import pyplot
+            pyplot.ion()
+            pyplot.close(pyplot.gcf())
+            fig = pyplot.figure()
+            ax = fig.add_subplot(111)
+
+        resolution = 0.1
+        times = timestep / resolution
+
+        last = self.inner_step(time_step=resolution, iterations=int(times), epsilon=1e-12)
+
+        if False:
+
+            pyplot.waitforbuttonpress()
+            from pymunk.matplotlib_util import DrawOptions
+
+            self.space.debug_draw(DrawOptions(ax))
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+
+            pyplot.waitforbuttonpress()
+
+    def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
         converging = False
 
         first_positions = self._get_positions()[:, :2]
 
+        lookback = 0
+        lookback_max = 5
+
         if converge:
             before_positions = first_positions.copy()
 
+            if False:
+
+                from matplotlib import pyplot
+                fig = pyplot.gcf()
+                ax = pyplot.gca()
+
+                scatter_plot = None
+                print(iterations)
             for _ in range(iterations):
                 self.space.step(time_step)
                 after_positions = self._get_positions()[:, :2]
 
+                if False:
+
+                    if scatter_plot is None:
+                        scatter_plot = ax.scatter(after_positions[:, 0], after_positions[:, 1])
+                        pyplot.show()
+                    else:
+                        scatter_plot.set_offsets(after_positions)
+                    import time
+                    time.sleep(0.1)
+                    fig.canvas.draw()
+                    fig.canvas.flush_events()
+
                 dist = self._mean_distance(before_positions, after_positions) * time_step
+
+                before_positions[:] = after_positions
+
+                if dist < epsilon:
+                    lookback += 1
+                    if lookback > lookback_max:
+                        break
+                else:
+                    lookback = 0
+
+                if lookback > lookback_max:
+                    break
 
                 if True or self.verbose:
                     print(_, dist)
@@ -107,7 +167,6 @@ class PlacementSimulation(Simulator):
                 if not converging:
                     if dist > 0:
                         converging = True
-                        continue
                 else:
                     if dist < epsilon:
                         break

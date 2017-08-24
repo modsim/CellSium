@@ -66,10 +66,10 @@ class PlainRenderer(Output):
     def new_canvas(self):
         return new_canvas()
 
-    def output(self):
+    def output(self, world):
         canvas = self.new_canvas()
 
-        for cell in self.cells:
+        for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
             cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
 
@@ -78,11 +78,11 @@ class PlainRenderer(Output):
     def convert(self, image):
         return (np.clip(image, 0, 1) * 255).astype(np.uint8)
 
-    def write(self, file_name):
-        cv2.imwrite(file_name, self.convert(self.output()))
+    def write(self, world, file_name):
+        cv2.imwrite(file_name, self.convert(self.output(world)))
 
-    def display(self):
-        cv2.imshow(self.__class__.__name__, self.convert(self.output()))
+    def display(self, world):
+        cv2.imshow(self.__class__.__name__, self.convert(self.output(world)))
         cv2.waitKey()
 
 
@@ -90,7 +90,7 @@ class FluorescenceRenderer(PlainRenderer):
     def __init__(self):
         super(FluorescenceRenderer, self).__init__()
 
-    def output(self):
+    def output(self, world):
         canvas = self.new_canvas()
 
         int_background = 1.0
@@ -126,7 +126,7 @@ class FluorescenceRenderer(PlainRenderer):
 
         heterogeneity = RRF.new(np.random.uniform, 0, 1)
 
-        for cell in self.cells:
+        for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
 
             pts = points[np.newaxis].astype(np.int32)
@@ -156,8 +156,8 @@ class FluorescenceRenderer(PlainRenderer):
 
 
 class PhaseContrastRenderer(PlainRenderer):
-    def output(self):
-        cell_canvas = super(PhaseContrastRenderer, self).output()
+    def output(self, world):
+        cell_canvas = super(PhaseContrastRenderer, self).output(world)
 
         canvas = LuminanceBackground.value * np.ones_like(cell_canvas)
 
@@ -207,8 +207,8 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def create_uneven_illumination(self):
         self.uneven_illumination = self.new_uneven_illumination()
 
-    def output(self):
-        canvas = super(UnevenIlluminationPhaseContrast, self).output()
+    def output(self, world):
+        canvas = super(UnevenIlluminationPhaseContrast, self).output(world)
 
         canvas = (canvas * (1.0 + 0.05 * complex_noise)) + 0.02 * complex_noise
 
@@ -232,8 +232,8 @@ class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def create_noise(self):
         self.product_noise, self.sum_noise = self.new_noise()
 
-    def output(self):
-        canvas = super(NoisyUnevenIlluminationPhaseContrast, self).__init__()
+    def output(self, world):
+        canvas = super(NoisyUnevenIlluminationPhaseContrast, self).__init__(world)
 
         canvas = canvas * (1.0 + 0.05 * self.product_noise) + self.sum_noise * (1.0 + 0.05)
 

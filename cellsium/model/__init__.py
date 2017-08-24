@@ -1,13 +1,31 @@
 from .geometry import *
 
 
-class Timestep(object):
-    __slots__ = 'timestep', 'absolute_time', 'simulator'
-
-    def __init__(self, timestep, absolute_time, simulator):
-        self.timestep, self.absolute_time, self.simulator = timestep, absolute_time, simulator
-
+from math import log
 
 class SimulatedCell(object):
+
+    def grow(self, hours, ts):
+        elongation_rate = 2 / 1.5  # 2 micrometer every 1.5 h
+        self.length += elongation_rate * hours
+
+        threshold = 8.0
+
+        if self.length > threshold:
+            self.divide(ts)
+
+    def divide(self, ts):
+        offspring_a, offspring_b = self.copy(), self.copy()
+
+        print("Division occurred!")
+
+        offspring_a.length /= 2
+        offspring_b.length /= 2
+
+        ts.simulator.add(offspring_a)
+        ts.simulator.add(offspring_b)
+
+        ts.simulator.remove(self)
+
     def step(self, ts):
-        pass
+        self.grow(hours=ts.timestep / (60.0 * 60.0), ts=ts)

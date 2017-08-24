@@ -4,25 +4,11 @@ import numpy as np
 
 
 class Output(Selectable):
-    def __init__(self):
-        self.cells = []
-        self.boundaries = []
-
-    def add(self, cell):
-        self.cells.append(cell)
-
-    def add_boundary(self, coordinates):
-        self.boundaries.append(np.array(coordinates))
-
-    def clear(self):
-        self.cells.clear()
-        self.boundaries.clear()
-
-    def output(self):
+    def output(self, world):
         pass
 
-    def write(self, file_name):
+    def write(self, world, file_name):
         pass
 
-    def display(self):
+    def display(self, world):
         raise RuntimeError('Not implemented')

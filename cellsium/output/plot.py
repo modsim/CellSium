@@ -12,17 +12,17 @@ class PlotRenderer(Output):
     def __init__(self):
         super(PlotRenderer, self).__init__()
 
-    def output(self):
+    def output(self, world):
         fig = pyplot.figure(
             figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
         )
         ax = fig.add_subplot(111)
 
-        for cell in self.cells:
+        for cell in world.cells:
             points = cell.points_on_canvas()
             ax.plot(points[:, 0], points[:, 1])
 
-        for boundary in self.boundaries:
+        for boundary in world.boundaries:
             for start, stop in zip(boundary, boundary[1:]):
                 ax.plot([start[0], stop[0]], [start[1], stop[1]])
 
@@ -31,10 +31,10 @@ class PlotRenderer(Output):
 
         return fig, ax
 
-    def write(self, file_name):
-        fig, ax = self.output()
+    def write(self, world, file_name):
+        fig, ax = self.output(world)
         fig.savefig(file_name)
 
-    def display(self):
-        self.output()
+    def display(self, world):
+        self.output(world)
         pyplot.show()

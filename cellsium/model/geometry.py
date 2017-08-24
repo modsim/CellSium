@@ -110,6 +110,13 @@ class InitializeWithParameters(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+import copy
+
+
+class Copyable(object):
+    def copy(self):
+        return copy.deepcopy(self)
+
 
 class AutoMesh3D(Shape3D):
     def points3d_on_canvas(self, steps=16, simplify=False):
@@ -125,6 +132,6 @@ class AutoMesh3D(Shape3D):
         return rotate_and_mesh(add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps)
 
 
-class PlacedCell(BentRod, WithAngle, WithPosition, InitializeWithParameters, AutoMesh3D):
+class PlacedCell(BentRod, WithAngle, WithPosition, InitializeWithParameters, AutoMesh3D, Copyable):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)
