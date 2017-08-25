@@ -7,6 +7,8 @@ class Shape(object):
     def raw_points(self, simplify=False):
         pass
 
+    def get_approximation_circles(self):
+        pass
 
 class Shape3D(Shape):
     def raw_points3d(self, steps=32, simplify=False):
@@ -38,6 +40,19 @@ class RodShaped(Shape):
         lower, circle_right, upper, circle_left = self.rod_raw_points(simplify=simplify)
         return np.r_[lower, circle_right, upper, circle_left]
 
+    def get_approximation_circles(self):
+        #[(radius, offset)]
+        diameter = self.width
+        radius = diameter / 2.0
+        length = self.length - diameter
+        half_length = length / 2.0
+
+        times = 2*int(length / radius)
+
+        return [
+            (radius, (x, 0))
+            for x in np.linspace(-half_length, half_length, times)
+        ]
 
 class BentRod(RodShaped):
     bend_overall = 0.0
@@ -74,6 +89,18 @@ class BentRod(RodShaped):
 
         return points, tris
 
+    def get_approximation_circles(self):
+        radii = []
+        offsets = []
+        for radius, offset in super(BentRod, self).get_approximation_circles():
+            radii.append(radius)
+            offsets.append(offset)
+        offsets = np.array(offsets)
+        offsets = parabolic_deformation(offsets, self.bend_overall)
+
+        for radius, offset in zip(radii, offsets):
+            yield radius, offset
+
 
 class Coccoid(Shape):
     def raw_points(self, simplify=False):
@@ -105,6 +132,29 @@ class WithAngle(object):
     angle = 0.0
 
 
+from math import cos, sin
+import numpy as np
+
+
+class WithProperDivisionBehavior(object):
+    def get_division_positions(self, count=2):
+        # must have a length, a position and an angle
+
+        sina, cosa = sin(self.angle), cos(self.angle)
+
+        x, y = self.position
+
+        return [
+            [
+                x + factor * cosa,
+                y + factor * sina
+            ]
+            for factor in np.linspace(-self.length / 2 / 2, self.length / 2 / 2, num=count)
+        ]
+
+
+
+
 class InitializeWithParameters(object):
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -132,6 +182,6 @@ class AutoMesh3D(Shape3D):
         return rotate_and_mesh(add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps)
 
 
-class PlacedCell(BentRod, WithAngle, WithPosition, InitializeWithParameters, AutoMesh3D, Copyable):
+class PlacedCell(BentRod, WithAngle, WithPosition, WithProperDivisionBehavior, InitializeWithParameters, AutoMesh3D, Copyable):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)

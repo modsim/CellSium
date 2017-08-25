@@ -96,14 +96,29 @@ def main():
 
     output = Output()
 
-    for n in range(0, 24):
-        for _ in range(60):
-            before = time()
-            simulator.step(60.0)
-            after = time()
-            print("Simulation time %.2fs" % (after - before))
+    simulation_end = 30 * 60 * 60  # 30 h
+    simulation_end = 12 * 60 * 60  #
+    simulation_output = 15 * 60  # 15 min
 
-        output.display(simulator.simulation.world)
+    simulation_timestep = 60  # 1 minute
+
+    simulation_time = 0
+
+    total_before = time()
+
+    while simulation_time < simulation_end:
+        before = time()
+        simulator.step(simulation_timestep)
+        simulation_time += simulation_timestep
+        after = time()
+        print("Timestep took %.2fs, virtual time: %.2f" % (after - before, simulation_time / (60.0 * 60.0)))
+
+        if (simulation_time % simulation_output) == 0:
+        #    output.display(simulator.simulation.world)
+            pass
+
+    total_after = time()
+    print("Whole simulation took %.2fs" % (total_after - total_before))
 
     if args.output:
         output.write(simulator.simulation.world, args.output)

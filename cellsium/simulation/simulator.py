@@ -80,6 +80,5 @@ class Simulator(object):
             self.remove(cell)
             self.add(cell)
 
-
         for sim in self.sub_simulators:
             sim.step(timestep)

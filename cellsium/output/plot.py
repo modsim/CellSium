@@ -8,15 +8,26 @@ class MicrometerPerCm(Tunable):
     default = 2.5
 
 
-class PlotRenderer(Output):
+class PlotRenderer(Output, Output.Default):
     def __init__(self):
         super(PlotRenderer, self).__init__()
 
+        self.fig = self.ax = None
+
     def output(self, world):
-        fig = pyplot.figure(
-            figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
-        )
-        ax = fig.add_subplot(111)
+        if self.fig is None:
+            self.fig = pyplot.figure(
+                figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
+            )
+
+        fig = self.fig
+
+        if self.ax is None:
+            self.ax = fig.add_subplot(111)
+
+        ax = self.ax
+
+        ax.clear()
 
         for cell in world.cells:
             points = cell.points_on_canvas()
@@ -36,5 +47,8 @@ class PlotRenderer(Output):
         fig.savefig(file_name)
 
     def display(self, world):
+        pyplot.ion()
         self.output(world)
         pyplot.show()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()

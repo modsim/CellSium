@@ -1,6 +1,7 @@
 import pymunkoptions
 pymunkoptions.options['debug'] = False
 import pymunk
+from multiprocessing import cpu_count
 
 import numpy as np
 
@@ -18,7 +19,11 @@ class PlacementSimulation(BaseSimulator):
     verbose = False
 
     def __init__(self):
-        self.space = pymunk.Space()
+        self.space = pymunk.Space(threaded=True)
+
+        self.space.threads = cpu_count() // 2
+        self.space.iterations = 100
+
         self.space.gravity = 0, 0
 
         self.cell_bodies = {}
@@ -42,29 +47,28 @@ class PlacementSimulation(BaseSimulator):
         body.position = pymunk.Vec2d((cell.position[0], cell.position[1]))
         body.angle = cell.angle
 
-        points = cell.raw_points(simplify=False)
+        approximation = False
 
-        if False:
-            from matplotlib import pyplot
-            pyplot.plot(points[:, 0], points[:, 1], marker='o')
+        if approximation:
+            shapes = tuple(
+                pymunk.Circle(body, radius, offset=offset)
+                for radius, offset in cell.get_approximation_circles()
+            )
+        else:
+            points = cell.raw_points(simplify=False)
 
-            points = cell.raw_points(simplify=True)
-            pyplot.plot(points[:, 0], points[:, 1], marker='o')
+            poly = pymunk.Poly(body, points)
+            poly.unsafe_set_radius(PlacementRadius.value)
 
-            pyplot.gca().set_aspect('equal', 'datalim')
-            pyplot.show()
-            points = cell.raw_points()
-
-        shape = pymunk.Poly(body, points)
-        shape.unsafe_set_radius(PlacementRadius.value)
+            shapes = (poly,)
 
         self.cell_bodies[cell] = body
-        self.cell_shapes[cell] = shape
+        self.cell_shapes[cell] = shapes
 
-        self.space.add(body, shape)
+        self.space.add(body, *shapes)
 
     def remove(self, cell):
-        self.space.remove(self.cell_bodies[cell], self.cell_shapes[cell])
+        self.space.remove(self.cell_bodies[cell], *self.cell_shapes[cell])
 
         del self.cell_bodies[cell]
         del self.cell_shapes[cell]
@@ -88,80 +92,50 @@ class PlacementSimulation(BaseSimulator):
         return cls._all_distances(before, after).mean()
 
     def step(self, timestep):
-
-        if False:
-            from matplotlib import pyplot
-            pyplot.ion()
-            pyplot.close(pyplot.gcf())
-            fig = pyplot.figure()
-            ax = fig.add_subplot(111)
-
-        resolution = 0.1
+        resolution = 0.1 * 10
         times = timestep / resolution
-
         last = self.inner_step(time_step=resolution, iterations=int(times), epsilon=1e-12)
-
-        if False:
-
-            pyplot.waitforbuttonpress()
-            from pymunk.matplotlib_util import DrawOptions
-
-            self.space.debug_draw(DrawOptions(ax))
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-
-            pyplot.waitforbuttonpress()
 
     def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
         converging = False
 
         first_positions = self._get_positions()[:, :2]
 
-        lookback = 0
-        lookback_max = 5
+        look_back = 0
+        look_back_threshold = 5
+
+        convergence_check = convergence_check_interval = 15
 
         if converge:
             before_positions = first_positions.copy()
 
-            if False:
-
-                from matplotlib import pyplot
-                fig = pyplot.gcf()
-                ax = pyplot.gca()
-
-                scatter_plot = None
-                print(iterations)
             for _ in range(iterations):
                 self.space.step(time_step)
+
+                convergence_check -= 1
+
+                if convergence_check > 0:
+                    continue
+
+                convergence_check = convergence_check_interval
+
                 after_positions = self._get_positions()[:, :2]
 
-                if False:
-
-                    if scatter_plot is None:
-                        scatter_plot = ax.scatter(after_positions[:, 0], after_positions[:, 1])
-                        pyplot.show()
-                    else:
-                        scatter_plot.set_offsets(after_positions)
-                    import time
-                    time.sleep(0.1)
-                    fig.canvas.draw()
-                    fig.canvas.flush_events()
-
-                dist = self._mean_distance(before_positions, after_positions) * time_step
+                dist = self._mean_distance(before_positions, after_positions) * time_step * convergence_check_interval
 
                 before_positions[:] = after_positions
 
                 if dist < epsilon:
-                    lookback += 1
-                    if lookback > lookback_max:
+                    look_back += 1
+                    if look_back > look_back_threshold:
                         break
                 else:
-                    lookback = 0
+                    look_back = 0
 
-                if lookback > lookback_max:
+                if look_back > look_back_threshold:
                     break
 
-                if True or self.verbose:
+                if False or self.verbose:
                     print(_, dist)
 
                 if not converging:
@@ -176,7 +150,7 @@ class PlacementSimulation(BaseSimulator):
             for _ in range(iterations):
                 self.space.step(time_step)
 
-            after_positions = self._get_positions()[:, :2]
+        after_positions = self._get_positions()[:, :2]
 
         for cell, body in self.cell_bodies.items():
             cell.position = [body.position[0], body.position[1]]
