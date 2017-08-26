@@ -1,27 +1,24 @@
+from tunable import Tunable
+from .base import PlacementSimulation, PlacementSimulationSimplification
+import numpy as np
+
 import pymunkoptions
 pymunkoptions.options['debug'] = False
 import pymunk
-from multiprocessing import cpu_count
-
-import numpy as np
-
-from . import BaseSimulator
-
-from tunable import Tunable
 
 
-class PlacementRadius(Tunable):
+class ChipmunkPlacementRadius(Tunable):
     default = 0.05
 
 
-class PlacementSimulation(BaseSimulator):
+class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
 
     verbose = False
 
     def __init__(self):
         self.space = pymunk.Space(threaded=True)
 
-        self.space.threads = cpu_count() // 2
+        self.space.threads = 2
         self.space.iterations = 100
 
         self.space.gravity = 0, 0
@@ -47,18 +44,16 @@ class PlacementSimulation(BaseSimulator):
         body.position = pymunk.Vec2d((cell.position[0], cell.position[1]))
         body.angle = cell.angle
 
-        approximation = False
-
-        if approximation:
+        if PlacementSimulationSimplification.value == 2:
             shapes = tuple(
                 pymunk.Circle(body, radius, offset=offset)
                 for radius, offset in cell.get_approximation_circles()
             )
         else:
-            points = cell.raw_points(simplify=False)
+            points = cell.raw_points(simplify=PlacementSimulationSimplification.value == 1)
 
             poly = pymunk.Poly(body, points)
-            poly.unsafe_set_radius(PlacementRadius.value)
+            poly.unsafe_set_radius(ChipmunkPlacementRadius.value)
 
             shapes = (poly,)
 

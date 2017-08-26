@@ -114,7 +114,7 @@ def main():
         print("Timestep took %.2fs, virtual time: %.2f" % (after - before, simulation_time / (60.0 * 60.0)))
 
         if (simulation_time % simulation_output) == 0:
-        #    output.display(simulator.simulation.world)
+            output.display(simulator.simulation.world)
             pass
 
     total_after = time()
