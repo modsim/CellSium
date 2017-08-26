@@ -40,6 +40,8 @@ class PlotRenderer(Output, Output.Default):
         ax.set_xlim(0, Width.value)
         ax.set_ylim(0, Height.value)
 
+        pyplot.tight_layout()
+
         return fig, ax
 
     def write(self, world, file_name):

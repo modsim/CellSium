@@ -8,6 +8,8 @@ from scipy.interpolate import interp1d
 from tunable import Tunable
 from .. import Width, Height, Calibration, um_to_pixel, pixel_to_um
 
+from .plot import MicrometerPerCm
+
 
 def noise_attempt(times=5, m=10, n=512, r=None):
     def make_rand(n, r):
@@ -59,6 +61,10 @@ def new_canvas(dtype=np.float32):
     return canvas
 
 
+class OpenCVimshow(Tunable):
+    default = False
+
+
 class PlainRenderer(Output):
     def __init__(self):
         super(PlainRenderer, self).__init__()
@@ -71,6 +77,8 @@ class PlainRenderer(Output):
 
         for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
+            # flip y, to have (0,0) bottom left
+            points[:, 1] = canvas.shape[0] - points[:, 1]
             cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
 
         return canvas
@@ -82,8 +90,33 @@ class PlainRenderer(Output):
         cv2.imwrite(file_name, self.convert(self.output(world)))
 
     def display(self, world):
-        cv2.imshow(self.__class__.__name__, self.convert(self.output(world)))
-        cv2.waitKey()
+
+        image = self.output(world)
+
+        if OpenCVimshow.value:
+            cv2.imshow(self.__class__.__name__, self.convert(image))
+            cv2.waitKey()
+        else:
+            from matplotlib import pyplot
+
+            pyplot.ion()
+
+            if getattr(self, 'fig', None) is None:
+                self.fig = pyplot.figure(
+                    figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
+                )
+
+            if getattr(self, 'ax', None) is None:
+                self.ax = self.fig.add_subplot(111)
+
+            self.ax.clear()
+
+            self.ax.imshow(image, cmap='gray')
+
+            pyplot.tight_layout()
+            pyplot.show()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
 
 
 class FluorescenceRenderer(PlainRenderer):
@@ -230,11 +263,11 @@ class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         return next(self.random_noise)
 
     def create_noise(self):
-        self.product_noise, self.sum_noise = self.new_noise()
+        self.product_noise, self.sum_noise = self.new_noise(), self.new_noise()
 
     def output(self, world):
-        canvas = super(NoisyUnevenIlluminationPhaseContrast, self).__init__(world)
-
+        canvas = super(NoisyUnevenIlluminationPhaseContrast, self).output(world)
+        self.create_noise()
         canvas = canvas * (1.0 + 0.05 * self.product_noise) + self.sum_noise * (1.0 + 0.05)
 
         return canvas

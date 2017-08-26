@@ -6,18 +6,32 @@ class World(object):
         self.cells = []
         self.boundaries = []
 
-    def add(self, cell):
-        self.cells.append(cell)
-
-    def remove(self, cell):
-        self.cells.remove(cell)
+        self.cells_to_add = []
+        self.cells_to_remove = []
 
     def add_boundary(self, coordinates):
         self.boundaries.append(np.array(coordinates))
 
     def clear(self):
         self.cells.clear()
+        self.cells_to_add.clear()
+        self.cells_to_remove.clear()
         self.boundaries.clear()
+
+    def add(self, cell):
+        self.cells_to_add.append(cell)
+
+    def remove(self, cell):
+        self.cells_to_remove.append(cell)
+
+    def commit(self):
+        for cell in self.cells_to_add:
+            self.cells.append(cell)
+        for cell in self.cells_to_remove:
+            self.cells.remove(cell)
+
+        self.cells_to_remove.clear()
+        self.cells_to_add.clear()
 
 
 class Simulation(object):
@@ -43,26 +57,14 @@ class Simulator(object):
     def add(self, cell):
         self.simulation.world.add(cell)
 
-        for sim in self.sub_simulators:
-            sim.add(cell)
-
     def remove(self, cell):
         self.simulation.world.remove(cell)
-
-        for sim in self.sub_simulators:
-            sim.remove(cell)
 
     def add_boundary(self, coordinates):
         self.simulation.world.add_boundary(np.array(coordinates))
 
-        for sim in self.sub_simulators:
-            sim.add_boundary(coordinates)
-
     def clear(self):
         self.simulation.world.clear()
-
-        for sim in self.sub_simulators:
-            sim.clear()
 
     def step(self, timestep=0.0):
 
@@ -73,12 +75,16 @@ class Simulator(object):
 
         ts = Timestep(timestep, simulation, self)
 
+        simulation.world.commit()
+
         for cell in simulation.world.cells:
             cell.step(ts)
 
-        for cell in simulation.world.cells:
-            self.remove(cell)
-            self.add(cell)
+        simulation.world.commit()
 
         for sim in self.sub_simulators:
+            sim.clear()
+            for cell in simulation.world.cells:
+                sim.add(cell)
+
             sim.step(timestep)

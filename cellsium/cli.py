@@ -27,6 +27,24 @@ class BoundariesFile(Tunable):
     default = ""
 
 
+def h_to_s(hours):
+    return hours * 60.0 * 60.0
+
+def s_to_h(seconds):
+    return seconds / (60.0 * 60.0)
+
+
+class SimulationDuration(Tunable):
+    default = -1#12.0
+
+class SimulationOutputInterval(Tunable):
+    default = 0.25
+
+class SimulationTimestep(Tunable):
+    default = 1.0 / 60.0
+
+
+
 from .simulation.simulator import *
 
 
@@ -96,26 +114,29 @@ def main():
 
     output = Output()
 
-    simulation_end = 30 * 60 * 60  # 30 h
-    simulation_end = 12 * 60 * 60  #
-    simulation_output = 15 * 60  # 15 min
+    simulation_time = 0.0
 
-    simulation_timestep = 60  # 1 minute
-
-    simulation_time = 0
+    last_output = 0.0
 
     total_before = time()
 
-    while simulation_time < simulation_end:
-        before = time()
-        simulator.step(simulation_timestep)
-        simulation_time += simulation_timestep
-        after = time()
-        print("Timestep took %.2fs, virtual time: %.2f" % (after - before, simulation_time / (60.0 * 60.0)))
+    time_step = h_to_s(SimulationTimestep.value)
 
-        if (simulation_time % simulation_output) == 0:
+    while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
+        before = time()
+
+        simulator.step(time_step)
+
+        for cell in simulator.simulation.world.cells:
+            print(cell.length)
+
+        simulation_time += time_step
+        after = time()
+        print("Timestep took %.2fs, virtual time: %.2f" % (after - before, s_to_h(simulation_time)))
+
+        if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
+            last_output = simulation_time
             output.display(simulator.simulation.world)
-            pass
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))

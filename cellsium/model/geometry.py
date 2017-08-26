@@ -1,14 +1,36 @@
+from math import cos, sin
 import numpy as np
+import copy
+
+
+
+def iter_through_class_hierarchy(cls):
+    collector = []
+
+    def _inner(cls_):
+        if cls_ == object:
+            return
+        for base in cls_.__bases__:
+            collector.append(base)
+            _inner(base)
+
+    _inner(cls)
+    return collector
 
 from ..geometry import *
 
 
 class Shape(object):
+    @staticmethod
+    def defaults():
+        return dict()
+
     def raw_points(self, simplify=False):
         pass
 
     def get_approximation_circles(self):
         pass
+
 
 class Shape3D(Shape):
     def raw_points3d(self, steps=32, simplify=False):
@@ -16,8 +38,11 @@ class Shape3D(Shape):
 
 
 class RodShaped(Shape):
-    length = 2.0
-    width = 1.0
+    #__slots__ = 'length', 'width'
+
+    @staticmethod
+    def defaults():
+        return dict(length=2.0, width=1.0)
 
     def rod_raw_points(self, simplify=False):
         diameter = self.width
@@ -41,7 +66,6 @@ class RodShaped(Shape):
         return np.r_[lower, circle_right, upper, circle_left]
 
     def get_approximation_circles(self):
-        #[(radius, offset)]
         diameter = self.width
         radius = diameter / 2.0
         length = self.length - diameter
@@ -49,16 +73,16 @@ class RodShaped(Shape):
 
         times = 2*int(length / radius)
 
-        return [
-            (radius, (x, 0))
-            for x in np.linspace(-half_length, half_length, times)
-        ]
+        for x in np.linspace(-half_length, half_length, times):
+            yield radius, (x, 0)
+
 
 class BentRod(RodShaped):
-    bend_overall = 0.0
+    #__slots__ = 'bend_overall', 'bend_upper', 'bend_lower'
 
-    bend_upper = 0.0
-    bend_lower = 0.0
+    @staticmethod
+    def defaults():
+        return dict(bend_overall=0.0, bend_upper=0.0, bend_lower=0.0)
 
     def bend(self, points):
         u_idx, l_idx = points[:, 1] > 0, points[:, 1] < 0
@@ -103,6 +127,12 @@ class BentRod(RodShaped):
 
 
 class Coccoid(Shape):
+    #__slots__ = 'length'
+
+    @staticmethod
+    def defaults():
+        return dict(length=1.0)
+
     def raw_points(self, simplify=False):
         radius = self.length / 2
 
@@ -113,6 +143,12 @@ class Coccoid(Shape):
 
 
 class Ellipsoid(Coccoid):
+    #__slots__ = 'width'
+
+    @staticmethod
+    def defaults():
+        return dict(length=2.0, width=1.0)
+
     def raw_points(self, simplify=False):
         points = super(Ellipsoid, self).raw_points()
 
@@ -125,15 +161,35 @@ class Ellipsoid(Coccoid):
 
 
 class WithPosition(object):
-    position = [0.0, 0.0]
+    #__slots__ = 'position'
+
+    @staticmethod
+    def defaults():
+        return dict(position=lambda: [0.0, 0.0])
 
 
 class WithAngle(object):
-    angle = 0.0
+    #__slots__ = 'angle'
+
+    @staticmethod
+    def defaults():
+        return dict(angle=0.0)
 
 
-from math import cos, sin
-import numpy as np
+_id_counter = 0
+
+def next_cell_id():
+    global _id_counter
+    _id_counter += 1
+    return _id_counter
+
+
+class WithLineage(object):
+    #__slots__ = 'id_', 'parent_id'
+
+    @staticmethod
+    def defaults():
+        return dict(id_=lambda: next_cell_id(), parent_id=0)
 
 
 class WithProperDivisionBehavior(object):
@@ -153,14 +209,17 @@ class WithProperDivisionBehavior(object):
         ]
 
 
-
-
 class InitializeWithParameters(object):
     def __init__(self, **kwargs):
+        for cls_ in iter_through_class_hierarchy(self.__class__):
+            if hasattr(cls_, 'defaults'):
+                for k, v in cls_.defaults().items():
+                    if hasattr(v, '__call__'):
+                        v = v()
+                    setattr(self, k, v)
+
         for k, v in kwargs.items():
             setattr(self, k, v)
-
-import copy
 
 
 class Copyable(object):
