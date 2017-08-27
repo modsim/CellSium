@@ -12,13 +12,7 @@ from .random import RRF
 from .simulation.placement import PlacementSimulation
 
 
-from .output import Output
-
-from .output.render import PlainRenderer
-from .output.plot import PlotRenderer
-from .output.svg import SvgRenderer
-from .output.mesh import MeshOutput
-from .output.tabular import *
+from .output.all import *
 
 from .parameters import CellParameterGenerator, Seed, NewCellCount
 
@@ -30,15 +24,18 @@ class BoundariesFile(Tunable):
 def h_to_s(hours):
     return hours * 60.0 * 60.0
 
+
 def s_to_h(seconds):
     return seconds / (60.0 * 60.0)
 
 
 class SimulationDuration(Tunable):
-    default = -1#12.0
+    default = 12.0
+
 
 class SimulationOutputInterval(Tunable):
     default = 0.25
+
 
 class SimulationTimestep(Tunable):
     default = 1.0 / 60.0
@@ -122,13 +119,15 @@ def main():
 
     time_step = h_to_s(SimulationTimestep.value)
 
+    x = JsonPickleSerializer()
+
     while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
         before = time()
 
         simulator.step(time_step)
 
-        for cell in simulator.simulation.world.cells:
-            print(cell.length)
+        #for cell in simulator.simulation.world.cells:
+        #    print(cell.length)
 
         simulation_time += time_step
         after = time()
@@ -136,7 +135,9 @@ def main():
 
         if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
             last_output = simulation_time
-            output.display(simulator.simulation.world)
+            #output.display(simulator.simulation.world)
+            output.write(simulator.simulation.world, 'test.tif')
+            x.display(simulator.simulation.world)
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))
@@ -144,4 +145,7 @@ def main():
     if args.output:
         output.write(simulator.simulation.world, args.output)
     else:
-        output.display(simulator.simulation.world)
+        try:
+            output.display(simulator.simulation.world)
+        except RuntimeError:
+            print("Display not possible")

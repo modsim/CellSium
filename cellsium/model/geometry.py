@@ -187,6 +187,12 @@ def next_cell_id():
 class WithLineage(object):
     #__slots__ = 'id_', 'parent_id'
 
+    def copy(self):
+
+
+    def next_cell_id(self):
+        self.id_ = next_cell_id()
+
     @staticmethod
     def defaults():
         return dict(id_=lambda: next_cell_id(), parent_id=0)
@@ -241,6 +247,6 @@ class AutoMesh3D(Shape3D):
         return rotate_and_mesh(add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps)
 
 
-class PlacedCell(BentRod, WithAngle, WithPosition, WithProperDivisionBehavior, InitializeWithParameters, AutoMesh3D, Copyable):
+class PlacedCell(BentRod, WithLineage, WithAngle, WithPosition, WithProperDivisionBehavior, InitializeWithParameters, AutoMesh3D, Copyable):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)

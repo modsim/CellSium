@@ -103,7 +103,7 @@ class CellParameterGenerator(object):
             minimum=NewCellLengthAbsoluteMin.value,
             maximum=NewCellLengthAbsoluteMax.value)
 
-        self.length = RRF.new(lambda: next(length_raw)[np.random.randint(0, 1)])
+        self.length = RRF.new(lambda: float(next(length_raw)[np.random.randint(0, 1)]))
 
         self.width = enforce_bounds(
             RRF.new(np.random.normal, NewCellWidthMean.value, NewCellWidthStd.value),
@@ -122,4 +122,4 @@ class CellParameterGenerator(object):
         self.position = RRF.new(_position)
 
         # does it make sense to make the angle configurable?
-        self.angle = RRF.new(lambda: np.radians(np.random.uniform(0, 360.0)))
+        self.angle = RRF.new(lambda: float(np.radians(np.random.uniform(0, 360.0))))

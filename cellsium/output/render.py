@@ -122,6 +122,10 @@ class PlainRenderer(Output):
 class FluorescenceRenderer(PlainRenderer):
     def __init__(self):
         super(FluorescenceRenderer, self).__init__()
+        canvas = self.new_canvas()
+
+        self.random_noise = RRF.new(np.random.normal, 0.0, 0.15, canvas.shape)
+
 
     def output(self, world):
         canvas = self.new_canvas()
@@ -141,13 +145,16 @@ class FluorescenceRenderer(PlainRenderer):
 
         emitter = cv2.GaussianBlur(emitter, emitter_size, 2.5, 2.5)
 
-        random_noise = RRF.new(np.random.normal, 0.0, 0.15, canvas.shape)
-
-        canvas = next(random_noise)
+        canvas = next(self.random_noise)
         p_canvas = np.pad(canvas, emitter_size, mode='reflect')
 
         # this weird construction is necessary for a sequence of reproducible randomness
         class SeqOfPairsOfUniform(object):
+            __slots__ = 'x0', 'x1', 'y0', 'y1'
+
+            def __init__(self):
+                self.x0, self.x1, self.y0, self.y1 = 0, 0, 0, 0
+
             def set_bounds(self, x0, x1, y0, y1):
                 self.x0, self.x1, self.y0, self.y1 = x0, x1, y0, y1
 
@@ -161,8 +168,16 @@ class FluorescenceRenderer(PlainRenderer):
 
         for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
+            #
+            points[:, 1] = canvas.shape[0] - points[:, 1]
 
             pts = points[np.newaxis].astype(np.int32)
+
+            if points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]:
+                continue
+
+            if points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0]:
+                continue
 
             if next(heterogeneity) > 0.7:
                 brightness = int_cell * 0.5
@@ -178,7 +193,8 @@ class FluorescenceRenderer(PlainRenderer):
 
                 result = cv2.pointPolygonTest(pts, (x, y), measureDist=False)
                 if result > 0.0:
-                    p_canvas[int(y):int(y)+emitter_size[1], int(x):int(x)+emitter_size[0]] += emitter
+                    target = p_canvas[int(y)+emitter_size[1]//2:int(y)+3*emitter_size[1]//2, int(x)+emitter_size[0]//2:int(x)+3*emitter_size[0]//2]
+                    target += emitter[:target.shape[0], :target.shape[1]]
                     int_countdown -= 1
 
         canvas = p_canvas[emitter_size[0]:-emitter_size[0], emitter_size[1]:-emitter_size[1]]
@@ -271,3 +287,61 @@ class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         canvas = canvas * (1.0 + 0.05 * self.product_noise) + self.sum_noise * (1.0 + 0.05)
 
         return canvas
+
+
+from imagej_tiff_meta import TiffWriter
+
+
+class TiffOutput(Output):
+
+    channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
+
+    def __init__(self):
+        self.channels = [c() for c in self.channels]
+        self.images = []
+        self.current = -1
+        self.writer = None
+
+    def output(self, world):
+        return [c.output(world) for c in self.channels]
+
+    def __del__(self):
+        stack = []
+        for stacklet in self.images:
+            stacklet = np.concatenate([image[np.newaxis] for image in stacklet], axis=0)
+            stack.append(stacklet[np.newaxis, np.newaxis])
+
+        result = np.concatenate(stack)
+
+        output_type = np.float32
+
+        if output_type in (np.uint8, np.uint16):
+
+            for c in range(result.shape[2]):
+                result[:, 0, c, :, :] -= result[:, 0, c, :, :].min()
+                result[:, 0, c, :, :] /= result[:, 0, c, :, :].max()
+
+            result *= 2**(8*np.dtype(output_type).itemsize) - 1
+
+        result = result.astype(output_type)
+
+        self.writer.save(result)
+
+    def write(self, world, file_name):
+        if self.writer is None:
+            self.writer = TiffWriter(file_name)
+
+        self.current += 1
+
+        stacklet = self.output(world)
+
+        self.images.append(stacklet)
+
+        for cell in world.cells:
+            points = um_to_pixel(cell.points_on_canvas())
+            # flip y, to have (0,0) bottom left
+            canvas = stacklet[0]
+            points[:, 1] = canvas.shape[0] - points[:, 1]
+
+            for c, _ in enumerate(self.channels):
+                self.writer.add_roi(points, c=c, z=0, t=self.current)
