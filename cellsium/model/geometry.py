@@ -188,7 +188,9 @@ class WithLineage(object):
     #__slots__ = 'id_', 'parent_id'
 
     def copy(self):
-
+        cell = super(WithLineage, self).copy()
+        cell.next_cell_id()
+        return cell
 
     def next_cell_id(self):
         self.id_ = next_cell_id()

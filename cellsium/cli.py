@@ -120,6 +120,7 @@ def main():
     time_step = h_to_s(SimulationTimestep.value)
 
     x = JsonPickleSerializer()
+    intv = 0
 
     while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
         before = time()
@@ -137,7 +138,8 @@ def main():
             last_output = simulation_time
             #output.display(simulator.simulation.world)
             output.write(simulator.simulation.world, 'test.tif')
-            x.display(simulator.simulation.world)
+            x.write(simulator.simulation.world, 'frame%03d.json' % (intv,))
+            intv+=1
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))
