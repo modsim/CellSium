@@ -6,16 +6,19 @@ from time import time
 from tunable import Tunable, TunableSelectable
 
 from .. import Width, Height, Calibration
-from ..model import PlacedCell, SimulatedCell
 from ..random import RRF
 
 from ..simulation.placement import PlacementSimulation
 
+from ..simulation.simulator import *
 
 from ..output.all import *
 
 from ..parameters import CellParameterGenerator, Seed, NewCellCount
 
+from . import Cell
+
+from . import new_cell
 
 class BoundariesFile(Tunable):
     default = ""
@@ -42,7 +45,6 @@ class SimulationTimestep(Tunable):
 
 
 
-from cellsium.simulation.simulator import *
 
 
 def add_boundaries_from_dxf(file_name, simulator):
@@ -63,8 +65,6 @@ def add_boundaries_from_dxf(file_name, simulator):
         simulator.add_boundary(points)
 
 
-class Cell(PlacedCell, SimulatedCell):
-    pass
 
 def main():
     parser = argparse.ArgumentParser()
@@ -79,25 +79,6 @@ def main():
 
     cpg = CellParameterGenerator()
 
-    CellType = Cell
-
-    def new_cell():
-        length, width = 1, 2
-
-        while width > length:
-            length = next(cpg.length)
-            width = next(cpg.width)
-
-        return CellType(
-            position=next(cpg.position),
-            angle=next(cpg.angle),
-            length=length,
-            width=width,
-            bend_overall=next(cpg.bend_overall),
-            bend_upper=next(cpg.bend_upper),
-            bend_lower=next(cpg.bend_lower)
-        )
-
     simulator = Simulator()
     ps = PlacementSimulation()
 
@@ -107,7 +88,7 @@ def main():
         add_boundaries_from_dxf(BoundariesFile.value, simulator)
 
     for _ in range(NewCellCount.value):
-        simulator.add(new_cell())
+        simulator.add(new_cell(cpg, Cell))
 
     output = Output()
 
