@@ -5,16 +5,16 @@ import numpy as np
 from time import time
 from tunable import Tunable, TunableSelectable
 
-from . import Width, Height, Calibration
-from .model import PlacedCell, SimulatedCell
-from .random import RRF
+from .. import Width, Height, Calibration
+from ..model import PlacedCell, SimulatedCell
+from ..random import RRF
 
-from .simulation.placement import PlacementSimulation
+from ..simulation.placement import PlacementSimulation
 
 
-from .output.all import *
+from ..output.all import *
 
-from .parameters import CellParameterGenerator, Seed, NewCellCount
+from ..parameters import CellParameterGenerator, Seed, NewCellCount
 
 
 class BoundariesFile(Tunable):
@@ -42,7 +42,7 @@ class SimulationTimestep(Tunable):
 
 
 
-from .simulation.simulator import *
+from cellsium.simulation.simulator import *
 
 
 def add_boundaries_from_dxf(file_name, simulator):
@@ -63,6 +63,9 @@ def add_boundaries_from_dxf(file_name, simulator):
         simulator.add_boundary(points)
 
 
+class Cell(PlacedCell, SimulatedCell):
+    pass
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -75,9 +78,6 @@ def main():
     RRF.seed(Seed.value)
 
     cpg = CellParameterGenerator()
-
-    class Cell(PlacedCell, SimulatedCell):
-        pass
 
     CellType = Cell
 
@@ -136,7 +136,7 @@ def main():
 
         if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
             last_output = simulation_time
-            #output.display(simulator.simulation.world)
+            # output.display(simulator.simulation.world)
             output.write(simulator.simulation.world, 'test.tif')
             x.write(simulator.simulation.world, 'frame%03d.json' % (intv,))
             intv+=1

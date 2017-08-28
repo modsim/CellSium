@@ -1,3 +1,6 @@
 from .pymunk import Chipmunk
-from .pybox2d import Box2D
+try:
+    from .pybox2d import Box2D
+except ImportError:
+    pass
 from .base import PlacementSimulation

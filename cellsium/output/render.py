@@ -43,7 +43,7 @@ class LuminanceBackground(Tunable):
 
 
 class LuminanceCell(Tunable):
-    default = 0.07
+    default = 0.075
 
 
 def add_if_uneven(value, add=1):
@@ -65,6 +65,74 @@ class OpenCVimshow(Tunable):
     default = False
 
 
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
+
+def prepare_patch(coordinates, **kwargs):
+    actions = [Path.MOVETO] + [Path.LINETO] * (len(coordinates) - 1)
+
+    if 'closed' in kwargs:
+        if kwargs['closed']:
+            actions.append(Path.CLOSEPOLY)
+
+            coordinates = np.r_[coordinates, [[0, 0]]]
+        del kwargs['closed']
+
+    patch = PathPatch(Path(coordinates, actions), **kwargs)
+    #gca.add_patch()
+    return patch
+
+from matplotlib import pyplot
+
+
+def scale_points_relative(points, scale_points=1.0):
+    if scale_points == 1.0:
+        return points
+
+    ma, mi = points.max(axis=0), points.min(axis=0)
+    shift = mi - (ma - mi) * 0.5
+    points = (scale_points * (points - shift)) + shift
+    return points
+
+
+def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
+    for points in array_of_points:
+        points = scale_points_relative(points, scale_points)
+        cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
+
+    return canvas
+
+
+def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, oversample=1):
+    dpi = 100.0
+    fig = pyplot.figure(frameon=False, dpi=dpi, figsize=(oversample * canvas.shape[1] / dpi, oversample * canvas.shape[0] / dpi))
+
+    ax = fig.add_axes([0, 0, 1, 1])
+    for points in array_of_points:
+        points = scale_points_relative(points, scale_points)
+        ax.add_patch(prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=oversample*0.25))
+
+    plt = ax.imshow(canvas, cmap='gray')
+
+    ax.axis('off')
+
+    plt.axes.get_xaxis().set_visible(False)
+    plt.axes.get_yaxis().set_visible(False)
+
+    fig.canvas.draw()
+
+    canvas_data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(
+        fig.canvas.get_width_height()[::-1] + (3,))[:, :, 0]
+    canvas_data = canvas_data.astype(np.float32) / canvas_data.max()
+
+    pyplot.close(fig.number)
+
+    if oversample != 1:
+        cv2.resize(canvas_data, dst=canvas_data, dsize=canvas.shape[::-1], interpolation=cv2.INTER_AREA)
+
+    return canvas_data
+
+
 class PlainRenderer(Output):
     def __init__(self):
         super(PlainRenderer, self).__init__()
@@ -75,11 +143,17 @@ class PlainRenderer(Output):
     def output(self, world):
         canvas = self.new_canvas()
 
+        array_of_points = []
+
         for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
             # flip y, to have (0,0) bottom left
             points[:, 1] = canvas.shape[0] - points[:, 1]
-            cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
+
+            array_of_points.append(points)
+
+        # canvas = render_on_canvas_cv2(canvas, array_of_points)
+        canvas = render_on_canvas_matplotlib(canvas, array_of_points)
 
         return canvas
 
@@ -125,7 +199,6 @@ class FluorescenceRenderer(PlainRenderer):
         canvas = self.new_canvas()
 
         self.random_noise = RRF.new(np.random.normal, 0.0, 0.15, canvas.shape)
-
 
     def output(self, world):
         canvas = self.new_canvas()
@@ -203,10 +276,27 @@ class FluorescenceRenderer(PlainRenderer):
 
         return canvas
 
+"""
+            cell_canvas_black = new_canvas()
 
-class PhaseContrastRenderer(PlainRenderer):
+            for cell in world.cells:
+                inner_canvas = new_canvas()
+
+                points = um_to_pixel(cell.points_on_canvas())
+                # flip y, to have (0,0) bottom left
+                points[:, 1] = canvas.shape[0] - points[:, 1]
+
+                inner_canvas = render_on_canvas_matplotlib(inner_canvas, [points])
+
+                gaussian(inner_canvas, dst=inner_canvas, sigma=0.75)
+
+                cell_canvas_black += inner_canvas
+"""
+
+
+class PhaseContrastRendererOld(PlainRenderer):
     def output(self, world):
-        cell_canvas = super(PhaseContrastRenderer, self).output(world)
+        cell_canvas = super(PhaseContrastRendererOld, self).output(world)
 
         canvas = LuminanceBackground.value * np.ones_like(cell_canvas)
 
@@ -237,6 +327,38 @@ class PhaseContrastRenderer(PlainRenderer):
         return canvas
 
 
+class PhaseContrastRenderer(PlainRenderer):
+    def output(self, world):
+        cell_canvas = super(PhaseContrastRenderer, self).output(world)
+
+        background = LuminanceBackground.value * np.ones_like(cell_canvas)
+
+        cell_halo = 0.5 * gaussian(cell_canvas, sigma=0.75)
+
+        background_w_halo = background + cell_halo
+
+        cell_canvas = gaussian(cell_canvas, sigma=0.05)
+
+        halo_glow_in_cells = 0.4 * gaussian(cell_canvas, 0.1) * gaussian(cell_halo * (1 - cell_canvas), sigma=0.05)
+
+        result = (
+            background_w_halo * (1 - cell_canvas)
+            + cell_canvas * LuminanceCell.value
+        ) + halo_glow_in_cells
+
+        result = gaussian(result, dst=result, sigma=0.075)
+
+        return result
+
+
+class UnevenIlluminationAdditiveFactor(Tunable):
+    default = 0.02
+
+class UnevenIlluminationMultiplicativeFactor(Tunable):
+    default = 0.05
+    default = 0.25
+
+
 class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def __init__(self):
         super(UnevenIlluminationPhaseContrast, self).__init__()
@@ -259,7 +381,10 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def output(self, world):
         canvas = super(UnevenIlluminationPhaseContrast, self).output(world)
 
-        canvas = (canvas * (1.0 + 0.05 * complex_noise)) + 0.02 * complex_noise
+        canvas = (
+            (canvas * (1.0 + UnevenIlluminationMultiplicativeFactor.value * self.uneven_illumination))
+            + UnevenIlluminationAdditiveFactor.value * self.uneven_illumination
+        )
 
         return canvas
 
@@ -270,21 +395,16 @@ class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
 
         empty = self.new_canvas()
 
-        self.random_noise = RRF.new(np.random.normal, 0.0, 0.0175, empty.shape)
-
-        self.product_noise = None
-        self.sum_noise = None
-
-    def new_noise(self):
-        return next(self.random_noise)
-
-    def create_noise(self):
-        self.product_noise, self.sum_noise = self.new_noise(), self.new_noise()
+        self.product_noise = RRF.new(np.random.normal, 1.0, 0.002, empty.shape)
+        self.sum_noise = RRF.new(np.random.normal, 0.0, 0.002, empty.shape)
 
     def output(self, world):
         canvas = super(NoisyUnevenIlluminationPhaseContrast, self).output(world)
-        self.create_noise()
-        canvas = canvas * (1.0 + 0.05 * self.product_noise) + self.sum_noise * (1.0 + 0.05)
+
+        product_noise = next(self.product_noise)
+        sum_noise = next(self.sum_noise)
+
+        canvas = canvas * product_noise + sum_noise
 
         return canvas
 
