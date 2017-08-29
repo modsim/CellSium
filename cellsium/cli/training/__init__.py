@@ -1,11 +1,9 @@
 import tqdm
-tqdm.tqdm.monitor_interval = 0
-
 import argparse
 
 import numpy as np
 
-from .. import new_cell, Cell
+from .. import new_cell, Cell, init
 from ...output.all import *
 
 from ... import Width, Height, Calibration, um_to_pixel, pixel_to_um
@@ -16,9 +14,7 @@ from ...simulation.placement import PlacementSimulation
 
 from tunable import TunableSelectable, TunableManager, Tunable
 
-
-def init():
-    RRF.seed(Seed.value)
+tqdm.tqdm.monitor_interval = 0
 
 
 cpg = None

@@ -2,7 +2,7 @@ import numpy as np
 
 from tunable import Tunable
 
-from .random import RRF
+from .random import RRF, enforce_bounds
 from . import Width, Height
 
 
@@ -77,16 +77,6 @@ class NewCellBendLowerLower(RandomlyDistributed): default = -0.1
 
 
 class NewCellBendLowerUpper(RandomlyDistributed): default = 0.1
-
-
-def enforce_bounds(iterator, minimum=-np.Inf, maximum=np.Inf):
-    for value in iterator:
-        if np.isscalar(value):
-            if maximum > value > minimum:
-                yield value
-        else:
-            if ((maximum > np.array(value)) & (np.array(value) > minimum)).all():
-                yield value
 
 
 class CellParameterGenerator(object):

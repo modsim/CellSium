@@ -1,8 +1,15 @@
 import cv2
 import numpy as np
 
+from matplotlib import pyplot
+from imagej_tiff_meta import TiffWriter
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
+
+
 from . import Output
-from ..random import RRF
+from ..random import RRF, enforce_bounds
+from scipy.misc import bytescale
 from scipy.ndimage.interpolation import rotate
 from scipy.interpolate import interp1d
 from tunable import Tunable
@@ -55,7 +62,7 @@ def add_if_uneven(value, add=1):
 
 def new_canvas(dtype=np.float32):
     width, height = int(um_to_pixel(Width.value)), int(um_to_pixel(Height.value))
-    # evenize
+    # make even
     width, height = add_if_uneven(width), add_if_uneven(height)
     canvas = np.zeros((height, width), dtype=dtype)
     return canvas
@@ -64,9 +71,6 @@ def new_canvas(dtype=np.float32):
 class OpenCVimshow(Tunable):
     default = False
 
-
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
 
 def prepare_patch(coordinates, **kwargs):
     actions = [Path.MOVETO] + [Path.LINETO] * (len(coordinates) - 1)
@@ -79,10 +83,7 @@ def prepare_patch(coordinates, **kwargs):
         del kwargs['closed']
 
     patch = PathPatch(Path(coordinates, actions), **kwargs)
-    #gca.add_patch()
     return patch
-
-from matplotlib import pyplot
 
 
 def scale_points_relative(points, scale_points=1.0):
@@ -105,7 +106,7 @@ def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
 
 def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, oversample=1):
     dpi = 100.0
-    fig = pyplot.figure(frameon=False, dpi=dpi, figsize=(oversample * canvas.shape[1] / dpi, oversample * canvas.shape[0] / dpi))
+    fig = pyplot.figure(frameon=False, dpi=int(dpi), figsize=(oversample * canvas.shape[1] / dpi, oversample * canvas.shape[0] / dpi))
 
     ax = fig.add_axes([0, 0, 1, 1])
     for points in array_of_points:
@@ -135,11 +136,20 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, overs
 
 
 class PlainRenderer(Output):
+
+    write_debug_output = True
+
     def __init__(self):
         super(PlainRenderer, self).__init__()
 
     def new_canvas(self):
         return new_canvas()
+
+    def debug_output(self, name, array):
+        if not self.write_debug_output:
+            return
+
+        cv2.imwrite('render-%s.png' % (name,), bytescale(array))
 
     def output(self, world):
         canvas = self.new_canvas()
@@ -155,6 +165,8 @@ class PlainRenderer(Output):
 
         # canvas = render_on_canvas_cv2(canvas, array_of_points)
         canvas = render_on_canvas_matplotlib(canvas, array_of_points)
+
+        self.debug_output('raw-cells', canvas)
 
         return canvas
 
@@ -194,46 +206,83 @@ class PlainRenderer(Output):
             self.fig.canvas.flush_events()
 
 
+# this weird construction is necessary for a sequence of reproducible randomness
+class SeqOfPairsOfUniform(object):
+    __slots__ = 'x0', 'x1', 'y0', 'y1'
+
+    def __init__(self):
+        self.x0, self.x1, self.y0, self.y1 = 0, 0, 0, 0
+
+    def set_bounds(self, x0, x1, y0, y1):
+        self.x0, self.x1, self.y0, self.y1 = x0, x1, y0, y1
+
+    def next(self):
+        return np.random.uniform(self.x0, self.x1), np.random.uniform(self.y0, self.y1)
+
+
+class FluorescenceEmitterKernelSizeW(Tunable):
+    default = 17
+
+
+class FluorescenceEmitterKernelSizeH(Tunable):
+    default = 17
+
+
+class FluorescenceEmitterGaussianW(Tunable):
+    default = 2.5
+
+
+class FluorescenceEmitterGaussianH(Tunable):
+    default = 2.5
+
+
+class FluorescenceNoiseMean(Tunable):
+    default = 0.0
+
+
+class FluorescenceNoiseStd(Tunable):
+    default = 0.15
+
+
+class FluorescenceRatioBackground(Tunable):
+    default = 1.0
+
+
+class FluorescenceRatioCells(Tunable):
+    default = 350.0
+
+
+class FluorescenceCellSizeFactor(Tunable):
+    default = 500.0
+
+
 class FluorescenceRenderer(PlainRenderer):
+
     def __init__(self):
         super(FluorescenceRenderer, self).__init__()
         canvas = self.new_canvas()
 
-        self.random_noise = RRF.new(np.random.normal, 0.0, 0.15, canvas.shape)
+        self.random_noise = RRF.new(np.random.normal, FluorescenceNoiseMean.value, FluorescenceNoiseStd.value, canvas.shape)
 
     def output(self, world):
         canvas = self.new_canvas()
 
-        int_background = 1.0
+        int_background = FluorescenceRatioBackground.value
 
-        int_cell = 350.0 * int_background
+        int_cell = FluorescenceRatioCells.value * int_background
 
-        # for cell in self.cells:
-        #     points = um_to_pixel(cell.points_on_canvas())
-        #     cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
-
-        emitter_size = (17, 17)
+        emitter_size = (FluorescenceEmitterKernelSizeW.value, FluorescenceEmitterKernelSizeH.value)
 
         emitter = np.zeros(emitter_size)
         emitter[emitter_size[0]//2, emitter_size[1]//2] = 1.0
 
-        emitter = cv2.GaussianBlur(emitter, emitter_size, 2.5, 2.5)
+        emitter = cv2.GaussianBlur(emitter, emitter_size,
+                                   sigmaX=FluorescenceEmitterGaussianW.value,
+                                   sigmaY=FluorescenceEmitterGaussianH.value)
 
-        canvas = next(self.random_noise)
+        self.debug_output('fluorescence-emitter', emitter)
+
         p_canvas = np.pad(canvas, emitter_size, mode='reflect')
-
-        # this weird construction is necessary for a sequence of reproducible randomness
-        class SeqOfPairsOfUniform(object):
-            __slots__ = 'x0', 'x1', 'y0', 'y1'
-
-            def __init__(self):
-                self.x0, self.x1, self.y0, self.y1 = 0, 0, 0, 0
-
-            def set_bounds(self, x0, x1, y0, y1):
-                self.x0, self.x1, self.y0, self.y1 = x0, x1, y0, y1
-
-            def next(self):
-                return np.random.uniform(self.x0, self.x1), np.random.uniform(self.y0, self.y1)
 
         sopou = SeqOfPairsOfUniform()
         sopou_gen = RRF.new(sopou.next)
@@ -247,83 +296,44 @@ class FluorescenceRenderer(PlainRenderer):
 
             pts = points[np.newaxis].astype(np.int32)
 
-            if points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]:
+            # Skip cells which (partly) lie outside of the image
+            # TODO proper handling, so that parts of cells poking into the image are still properly handled
+            if ((points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]) or
+                    (points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0])):
                 continue
 
-            if points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0]:
-                continue
-
+            # use real fluorescence value of the cell!
             if next(heterogeneity) > 0.7:
                 brightness = int_cell * 0.5
             else:
                 brightness = int_cell
 
-            int_countdown = brightness * (cv2.contourArea(pts) / 500.0)
+            int_countdown = brightness * (cv2.contourArea(pts) / FluorescenceCellSizeFactor.value)
 
             sopou.set_bounds(points[:, 0].min(), points[:, 0].max(), points[:, 1].min(), points[:, 1].max())
 
             while int_countdown > 0:
                 x, y = next(sopou_gen)
 
-                result = cv2.pointPolygonTest(pts, (x, y), measureDist=False)
-                if result > 0.0:
-                    target = p_canvas[int(y)+emitter_size[1]//2:int(y)+3*emitter_size[1]//2, int(x)+emitter_size[0]//2:int(x)+3*emitter_size[0]//2]
+                if cv2.pointPolygonTest(pts, (x, y), measureDist=False) > 0.0:
+                    target = p_canvas[
+                             int(y)+emitter_size[1]//2:int(y)+3*emitter_size[1]//2,
+                             int(x)+emitter_size[0]//2:int(x)+3*emitter_size[0]//2
+                             ]
                     target += emitter[:target.shape[0], :target.shape[1]]
                     int_countdown -= 1
 
         canvas = p_canvas[emitter_size[0]:-emitter_size[0], emitter_size[1]:-emitter_size[1]]
 
-        gaussian(canvas, dst=canvas, sigma=0.025)
+        self.debug_output('raw-fluorescence-cells', canvas)
 
-        return canvas
+        noise = int_background * np.abs(next(self.random_noise))
 
-"""
-            cell_canvas_black = new_canvas()
+        self.debug_output('raw-fluorescence-noise', noise)
 
-            for cell in world.cells:
-                inner_canvas = new_canvas()
+        canvas += noise
 
-                points = um_to_pixel(cell.points_on_canvas())
-                # flip y, to have (0,0) bottom left
-                points[:, 1] = canvas.shape[0] - points[:, 1]
-
-                inner_canvas = render_on_canvas_matplotlib(inner_canvas, [points])
-
-                gaussian(inner_canvas, dst=inner_canvas, sigma=0.75)
-
-                cell_canvas_black += inner_canvas
-"""
-
-
-class PhaseContrastRendererOld(PlainRenderer):
-    def output(self, world):
-        cell_canvas = super(PhaseContrastRendererOld, self).output(world)
-
-        canvas = LuminanceBackground.value * np.ones_like(cell_canvas)
-
-        cell_mask = cell_canvas.copy()
-
-        cell_canvas_black = gaussian(cell_canvas, sigma=0.75)
-
-        #cell_canvas_black = cell_canvas_black - cell_canvas
-
-        gaussian(cell_canvas, dst=cell_canvas, sigma=0.6)
-        cell_canvas *= 0.9
-
-        cell_canvas_black -= cell_canvas
-        cell_canvas_black *= (1-cell_mask)
-
-        # gaussian(canvas, dst=canvas, sigma=0.03)
-
-        canvas = (1-cell_canvas) * canvas + LuminanceCell.value * cell_canvas
-
-        canvas -= 0.50 * cell_canvas_black
-
-        canvas += 0.5 * (1-cell_mask) * cell_canvas
-
-        canvas -= 0.045*cell_mask
-
-        gaussian(canvas, dst=canvas, sigma=0.05)
+        self.debug_output('fluorescence', canvas)
 
         return canvas
 
@@ -334,26 +344,39 @@ class PhaseContrastRenderer(PlainRenderer):
 
         background = LuminanceBackground.value * np.ones_like(cell_canvas)
 
+        self.debug_output('pc-background', background)
+
         cell_halo = 0.5 * gaussian(cell_canvas, sigma=0.75)
 
         background_w_halo = background + cell_halo
 
+        self.debug_output('pc-halo-background', background_w_halo)
+
         cell_canvas = gaussian(cell_canvas, sigma=0.05)
 
+        self.debug_output('pc-blurred-cells', cell_canvas)
+
         halo_glow_in_cells = 0.4 * gaussian(cell_canvas, 0.1) * gaussian(cell_halo * (1 - cell_canvas), sigma=0.05)
+
+        self.debug_output('pc-blur-in-cells', halo_glow_in_cells)
 
         result = (
             background_w_halo * (1 - cell_canvas)
             + cell_canvas * LuminanceCell.value
         ) + halo_glow_in_cells
 
+        self.debug_output('pc-unblurred-result', result)
+
         result = gaussian(result, dst=result, sigma=0.075)
+
+        self.debug_output('pc-result', result)
 
         return result
 
 
 class UnevenIlluminationAdditiveFactor(Tunable):
     default = 0.02
+
 
 class UnevenIlluminationMultiplicativeFactor(Tunable):
     default = 0.05
@@ -382,15 +405,19 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def output(self, world):
         canvas = super(UnevenIlluminationPhaseContrast, self).output(world)
 
+        self.debug_output('uneven-illumination', self.uneven_illumination)
+
         canvas = (
             (canvas * (1.0 + UnevenIlluminationMultiplicativeFactor.value * self.uneven_illumination))
             + UnevenIlluminationAdditiveFactor.value * self.uneven_illumination
         )
 
+        self.debug_output('pc-with-uneven-illumination', canvas)
+
         return canvas
 
 
-class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
+class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
     def __init__(self):
         super(NoisyUnevenIlluminationPhaseContrast, self).__init__()
 
@@ -405,12 +432,14 @@ class NoisyUnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         product_noise = next(self.product_noise)
         sum_noise = next(self.sum_noise)
 
+        self.debug_output('product_noise', product_noise)
+        self.debug_output('sum_noise', sum_noise)
+
         canvas = canvas * product_noise + sum_noise
 
+        self.debug_output('pc-uneven-w-noise', canvas)
+
         return canvas
-
-
-from imagej_tiff_meta import TiffWriter
 
 
 class TiffOutput(Output):

@@ -2,6 +2,7 @@ import argparse
 
 from tunable import Tunable, TunableSelectable
 
+from .. import init
 from ...output.all import *
 
 from jsonpickle import loads
@@ -16,6 +17,8 @@ def main():
 
     args = parser.parse_args()
 
+    init()
+
     output = Output()
 
     with open(args.input, 'r') as fp:
@@ -23,8 +26,4 @@ def main():
 
     data = loads(data)
 
-    print(data.cells)
-
     output.write(data, args.output)
-
-

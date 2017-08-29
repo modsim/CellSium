@@ -19,3 +19,13 @@ class RRF(object):
             value = fun(*args, **kwargs)
             state = np.random.get_state()
             yield value
+
+
+def enforce_bounds(iterator, minimum=-np.Inf, maximum=np.Inf):
+    for value in iterator:
+        if np.isscalar(value):
+            if maximum > value > minimum:
+                yield value
+        else:
+            if ((maximum > np.array(value)) & (np.array(value) > minimum)).all():
+                yield value
