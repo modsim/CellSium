@@ -123,7 +123,8 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, overs
 
     canvas_data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(
         fig.canvas.get_width_height()[::-1] + (3,))[:, :, 0]
-    canvas_data = canvas_data.astype(np.float32) / canvas_data.max()
+    if canvas_data.max() > 0.0:
+        canvas_data = canvas_data.astype(np.float32) / canvas_data.max()
 
     pyplot.close(fig.number)
 
@@ -415,6 +416,7 @@ from imagej_tiff_meta import TiffWriter
 class TiffOutput(Output):
 
     channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
+    output_type = np.uint8
 
     def __init__(self):
         self.channels = [c() for c in self.channels]
@@ -433,17 +435,15 @@ class TiffOutput(Output):
 
         result = np.concatenate(stack)
 
-        output_type = np.float32
-
-        if output_type in (np.uint8, np.uint16):
+        if self.output_type in (np.uint8, np.uint16):
 
             for c in range(result.shape[2]):
                 result[:, 0, c, :, :] -= result[:, 0, c, :, :].min()
                 result[:, 0, c, :, :] /= result[:, 0, c, :, :].max()
 
-            result *= 2**(8*np.dtype(output_type).itemsize) - 1
+            result *= 2**(8*np.dtype(self.output_type).itemsize) - 1
 
-        result = result.astype(output_type)
+        result = result.astype(self.output_type)
 
         self.writer.save(result)
 

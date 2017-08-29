@@ -1,3 +1,10 @@
+import tqdm
+tqdm.tqdm.monitor_interval = 0
+
+import argparse
+
+import numpy as np
+
 from .. import new_cell, Cell
 from ...output.all import *
 
@@ -7,38 +14,43 @@ from ...parameters import CellParameterGenerator, Seed, NewCellCount
 from ...simulation.simulator import *
 from ...simulation.placement import PlacementSimulation
 
+from tunable import TunableSelectable, TunableManager, Tunable
 
-from tunable import TunableManager
 
-import numpy as np
+def init():
+    RRF.seed(Seed.value)
+
 
 cpg = None
 ccf = None
 
-def generate_training_data(cells=32, size=(128, 128), calibration=0.065, return_world=False):
+
+def generate_training_data(cells=32, size=(128, 128), return_world=False, return_only_world=False):
 
     TunableManager.load({
         'Width': pixel_to_um(size[1]),
         'Height': pixel_to_um(size[0]),
-        'Calibration': calibration,
         'NewCellRadiusFromCenter': 1
-    })
+    }, reset=False)
 
     global cpg, ccf
 
     if cpg is None:
         cpg = CellParameterGenerator()
-        ccf = RRF.new(np.random.uniform, 0, cells*2)
+        ccf = RRF.new(np.random.randint, 0, cells*2)
 
     simulator = Simulator()
     ps = PlacementSimulation()
 
     simulator.sub_simulators += [ps]
 
-    for _ in range(int(next(ccf))):
+    for _ in range(next(ccf)):
         simulator.add(new_cell(cpg, Cell))
 
     simulator.step(60.0)
+
+    if return_only_world:
+        return simulator.simulation.world
 
     image_gen, gt_gen = UnevenIlluminationPhaseContrast(), PlainRenderer()
 
@@ -48,27 +60,21 @@ def generate_training_data(cells=32, size=(128, 128), calibration=0.065, return_
 
     gt = gt > 0
 
-    #print(image.min(), image.max(), image.dtype)
-
     if return_world:
         return image, gt, simulator.simulation.world
     else:
         return image, gt
 
 
+class TrainingDataCount(Tunable):
+    default = 16
 
-def init():
-    RRF.seed(Seed.value)
-
-import argparse
-from tunable import TunableSelectable
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output-file', dest='output', default=None)
     TunableSelectable.setup_and_parse(parser)
     args = parser.parse_args()
-
     init()
 
     generate_training_data()
@@ -77,10 +83,8 @@ def main():
         TiffOutput.channels = [NoisyUnevenIlluminationPhaseContrast]
 
         to = TiffOutput()
-
-        n = 32
-        for _ in range(n):
-            _, _, world = generate_training_data(return_world=True)
+        for _ in tqdm.tqdm(range(TrainingDataCount.value)):
+            world = generate_training_data(return_only_world=True)
             to.write(world, args.output)
 
         print("Done")
