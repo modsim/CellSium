@@ -1,23 +1,9 @@
 from math import cos, sin
 import numpy as np
-import copy
-
-
-
-def iter_through_class_hierarchy(cls):
-    collector = []
-
-    def _inner(cls_):
-        if cls_ == object:
-            return
-        for base in cls_.__bases__:
-            collector.append(base)
-            _inner(base)
-
-    _inner(cls)
-    return collector
 
 from ..geometry import *
+
+
 
 
 class Shape(object):
@@ -176,28 +162,7 @@ class WithAngle(object):
         return dict(angle=0.0)
 
 
-_id_counter = 0
 
-def next_cell_id():
-    global _id_counter
-    _id_counter += 1
-    return _id_counter
-
-
-class WithLineage(object):
-    #__slots__ = 'id_', 'parent_id'
-
-    def copy(self):
-        cell = super(WithLineage, self).copy()
-        cell.next_cell_id()
-        return cell
-
-    def next_cell_id(self):
-        self.id_ = next_cell_id()
-
-    @staticmethod
-    def defaults():
-        return dict(id_=lambda: next_cell_id(), parent_id=0)
 
 
 class WithProperDivisionBehavior(object):
@@ -210,29 +175,13 @@ class WithProperDivisionBehavior(object):
 
         return [
             [
-                x + factor * cosa,
-                y + factor * sina
+                float(x + factor * cosa),
+                float(y + factor * sina)
             ]
             for factor in np.linspace(-self.length / 2 / 2, self.length / 2 / 2, num=count)
         ]
 
 
-class InitializeWithParameters(object):
-    def __init__(self, **kwargs):
-        for cls_ in iter_through_class_hierarchy(self.__class__):
-            if hasattr(cls_, 'defaults'):
-                for k, v in cls_.defaults().items():
-                    if hasattr(v, '__call__'):
-                        v = v()
-                    setattr(self, k, v)
-
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-
-class Copyable(object):
-    def copy(self):
-        return copy.deepcopy(self)
 
 
 class AutoMesh3D(Shape3D):
@@ -249,6 +198,7 @@ class AutoMesh3D(Shape3D):
         return rotate_and_mesh(add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps)
 
 
-class PlacedCell(BentRod, WithLineage, WithAngle, WithPosition, WithProperDivisionBehavior, InitializeWithParameters, AutoMesh3D, Copyable):
+class CellGeometry(WithAngle, WithPosition, AutoMesh3D):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)
+

@@ -20,6 +20,7 @@ from . import Cell
 
 from . import new_cell
 
+
 class BoundariesFile(Tunable):
     default = ""
 
@@ -42,9 +43,6 @@ class SimulationOutputInterval(Tunable):
 
 class SimulationTimestep(Tunable):
     default = 1.0 / 60.0
-
-
-
 
 
 def add_boundaries_from_dxf(file_name, simulator):
@@ -100,8 +98,10 @@ def main():
 
     time_step = h_to_s(SimulationTimestep.value)
 
-    x = JsonPickleSerializer()
-    intv = 0
+    json = JsonPickleSerializer()
+    output_count = 0
+
+    multi_output = {}
 
     while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
         before = time()
@@ -118,12 +118,21 @@ def main():
         if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
             last_output = simulation_time
             # output.display(simulator.simulation.world)
-            output.write(simulator.simulation.world, 'test.tif')
-            x.write(simulator.simulation.world, 'frame%03d.json' % (intv,))
-            intv+=1
+            # output.write(simulator.simulation.world, 'test.tif')
+            #json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
+
+            import copy
+
+            multi_output[(simulation_time, output_count)] = copy.deepcopy(simulator.simulation.world)
+
+            output_count += 1
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))
+
+    if True:
+        json.write(multi_output, 'frames.json')
+        raise SystemExit
 
     if args.output:
         output.write(simulator.simulation.world, args.output)

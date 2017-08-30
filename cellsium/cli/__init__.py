@@ -2,6 +2,7 @@ from ..model import PlacedCell, SimulatedCell
 from ..random import RRF
 from ..parameters import Seed
 
+
 def init():
     RRF.seed(Seed.value)
 

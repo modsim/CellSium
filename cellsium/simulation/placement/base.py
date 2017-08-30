@@ -9,3 +9,7 @@ class PlacementSimulationSimplification(Tunable):
 
 class PlacementSimulation(BaseSimulator, Selectable):
     pass
+
+
+class NoPlacement(PlacementSimulation):
+    pass

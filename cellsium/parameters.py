@@ -107,7 +107,7 @@ class CellParameterGenerator(object):
         def _position():
             radius = np.random.uniform(0, NewCellRadiusFromCenter.value)
             angle = np.radians(np.random.uniform(0, 360.0))
-            return [radius * np.cos(angle) + Width.value/2, radius * np.sin(angle) + Height.value/2]
+            return [float(radius * np.cos(angle) + Width.value/2), float(radius * np.sin(angle) + Height.value/2)]
 
         self.position = RRF.new(_position)
 

@@ -1,3 +1,4 @@
+from .agent import *
 from .geometry import *
 
 
@@ -7,6 +8,11 @@ from ..random import RRF
 
 threshold_series = RRF.new(np.random.uniform, 3.0, 4.0)
 elongation_rate_series = RRF.new(np.random.uniform, 1, 2)
+
+
+
+class PlacedCell(WithLineage, WithTemporalLineage, WithProperDivisionBehavior, InitializeWithParameters, Copyable, CellGeometry, BentRod):
+    pass
 
 
 class SimulatedCell(object):
@@ -34,8 +40,12 @@ class SimulatedCell(object):
 
         offspring_a.position, offspring_b.position = self.get_division_positions()
 
-        if hasattr(self, 'id_'):
+        if isinstance(self, WithLineage):
             offspring_a.parent_id = offspring_b.parent_id = self.id_
+
+        if isinstance(self, WithTemporalLineage):
+            now = ts.simulation.time
+            offspring_b.birth_time = offspring_a.birth_time = now
 
         ts.simulator.add(offspring_a)
         ts.simulator.add(offspring_b)

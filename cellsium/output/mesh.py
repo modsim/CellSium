@@ -11,7 +11,7 @@ class MeshOutput(Output):
     def __init__(self):
         super(MeshOutput, self).__init__()
 
-    def output(self):
+    def output(self, world):
         meshes = []
 
         for boundary in world.boundaries:
