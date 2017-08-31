@@ -1,4 +1,5 @@
 import numpy as np
+from .. import s_to_h, h_to_s
 
 
 class World(object):
@@ -42,6 +43,18 @@ class Simulation(object):
 
 class Timestep(object):
     __slots__ = 'timestep', 'simulation', 'simulator'
+
+    @property
+    def hours(self):
+        return s_to_h(self.timestep)
+
+    @property
+    def time(self):
+        return self.simulation.time
+
+    @property
+    def time_hours(self):
+        return s_to_h(self.time)
 
     def __init__(self, timestep, simulation, simulator):
         self.timestep, self.simulation, self.simulator = timestep, simulation, simulator

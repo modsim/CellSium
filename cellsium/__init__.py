@@ -28,3 +28,11 @@ def pixel_to_um(pix):
 
 def um_to_pixel(um):
     return um / Calibration.value
+
+
+def h_to_s(hours):
+    return hours * 60.0 * 60.0
+
+
+def s_to_h(seconds):
+    return seconds / (60.0 * 60.0)

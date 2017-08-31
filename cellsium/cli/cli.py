@@ -1,6 +1,7 @@
 import argparse
 
 import numpy as np
+from .. import s_to_h, h_to_s
 
 from time import time
 from tunable import Tunable, TunableSelectable
@@ -25,20 +26,13 @@ class BoundariesFile(Tunable):
     default = ""
 
 
-def h_to_s(hours):
-    return hours * 60.0 * 60.0
-
-
-def s_to_h(seconds):
-    return seconds / (60.0 * 60.0)
-
-
 class SimulationDuration(Tunable):
     default = 12.0
 
 
 class SimulationOutputInterval(Tunable):
     default = 0.25
+    default = 1.0/60.0
 
 
 class SimulationTimestep(Tunable):
@@ -63,7 +57,6 @@ def add_boundaries_from_dxf(file_name, simulator):
         simulator.add_boundary(points)
 
 
-
 def main():
     parser = argparse.ArgumentParser()
 
@@ -86,7 +79,9 @@ def main():
         add_boundaries_from_dxf(BoundariesFile.value, simulator)
 
     for _ in range(NewCellCount.value):
-        simulator.add(new_cell(cpg, Cell))
+        cell = new_cell(cpg, Cell)
+        cell.birth()
+        simulator.add(cell)
 
     output = Output()
 
@@ -117,7 +112,7 @@ def main():
 
         if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
             last_output = simulation_time
-            # output.display(simulator.simulation.world)
+            output.display(simulator.simulation.world)
             # output.write(simulator.simulation.world, 'test.tif')
             #json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
 

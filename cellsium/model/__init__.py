@@ -1,3 +1,4 @@
+from .. import s_to_h, h_to_s
 from .agent import *
 from .geometry import *
 
@@ -6,34 +7,18 @@ import numpy as np
 from math import log
 from ..random import RRF
 
-threshold_series = RRF.new(np.random.uniform, 3.0, 4.0)
-elongation_rate_series = RRF.new(np.random.uniform, 1, 2)
-
-
 
 class PlacedCell(WithLineage, WithTemporalLineage, WithProperDivisionBehavior, InitializeWithParameters, Copyable, CellGeometry, BentRod):
     pass
 
 
 class SimulatedCell(object):
-    @staticmethod
-    def defaults():
-        return dict(_threshold=lambda: next(threshold_series), _gr=lambda: next(elongation_rate_series))
 
-    def grow(self, hours, ts):
-        #elongation_rate = 2 / 1.5  # 2 micrometer every 1.5 h
-        elongation_rate = self._gr
-        self.length += elongation_rate * hours
+    def birth(self, parent=None, ts=None):
+        pass
 
-        threshold = self._threshold
-
-        if self.length > threshold:
-            offspring_a, offspring_b = self.divide(ts)
-            offspring_a.length /= 2
-            offspring_b.length /= 2
-
-            offspring_a._gr = next(elongation_rate_series)
-            offspring_b._gr = next(elongation_rate_series)
+    def grow(self, ts):
+        pass
 
     def divide(self, ts):
         offspring_a, offspring_b = self.copy(), self.copy()
@@ -50,9 +35,42 @@ class SimulatedCell(object):
         ts.simulator.add(offspring_a)
         ts.simulator.add(offspring_b)
 
+        offspring_a.birth(parent=self, ts=ts)
+        offspring_b.birth(parent=self, ts=ts)
+
         ts.simulator.remove(self)
 
         return offspring_a, offspring_b
 
     def step(self, ts):
-        self.grow(hours=ts.timestep / (60.0 * 60.0), ts=ts)
+        self.grow(ts=ts)
+
+
+class SizerCell(SimulatedCell):
+    sizer_series = RRF.new(np.random.normal, 3.0, 0.25)  # µm
+
+    def birth(self, parent=None, ts=None):
+        self.division_size = next(self.__class__.sizer_series)
+        self.elongation_rate = 1.5
+
+    def grow(self, ts):
+        self.length += self.elongation_rate * ts.hours
+
+        if self.length > self.division_size:
+            offspring_a, offspring_b = self.divide(ts)
+            offspring_a.length = offspring_b.length = self.length / 2
+
+
+class TimerCell(SimulatedCell):
+    elongation_rate_series = RRF.new(np.random.normal, 1.5, 0.25)  # µm·h⁻¹
+
+    def birth(self, parent=None, ts=None):
+        self.division_time = h_to_s(1.0)
+        self.elongation_rate = next(self.__class__.elongation_rate_series)
+
+    def grow(self, ts):
+        self.length += self.elongation_rate * ts.hours
+
+        if ts.time > (self.birth_time + self.division_time):
+            offspring_a, offspring_b = self.divide(ts)
+            offspring_a.length = offspring_b.length = self.length / 2

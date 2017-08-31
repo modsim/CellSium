@@ -1,4 +1,4 @@
-from ..model import PlacedCell, SimulatedCell
+from ..model import *
 from ..random import RRF
 from ..parameters import Seed
 
@@ -7,8 +7,9 @@ def init():
     RRF.seed(Seed.value)
 
 
-class Cell(PlacedCell, SimulatedCell):
-    pass
+class Cell(PlacedCell, TimerCell): pass
+
+#class Cell(PlacedCell, SizerCell): pass
 
 
 def new_cell(cpg, cell_type):
