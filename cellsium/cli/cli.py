@@ -28,11 +28,11 @@ class BoundariesFile(Tunable):
 
 class SimulationDuration(Tunable):
     default = 12.0
-
+    default = 16.0
 
 class SimulationOutputInterval(Tunable):
     default = 0.25
-    default = 1.0/60.0
+    #default = 1.0/60.0
 
 
 class SimulationTimestep(Tunable):
@@ -94,6 +94,8 @@ def main():
     time_step = h_to_s(SimulationTimestep.value)
 
     json = JsonPickleSerializer()
+    qd = QuickAndDirtyTableDumper()
+
     output_count = 0
 
     multi_output = {}
@@ -112,23 +114,16 @@ def main():
 
         if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
             last_output = simulation_time
-            output.display(simulator.simulation.world)
+            #output.display(simulator.simulation.world)
             # output.write(simulator.simulation.world, 'test.tif')
             #json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
-
-            import copy
-
-            multi_output[(simulation_time, output_count)] = copy.deepcopy(simulator.simulation.world)
+            qd.write(simulator.simulation.world, 'qd%03d.npz' % (output_count,), time=simulation_time)
 
             output_count += 1
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))
-
-    if True:
-        json.write(multi_output, 'frames.json')
-        raise SystemExit
-
+    raise SystemExit
     if args.output:
         output.write(simulator.simulation.world, args.output)
     else:

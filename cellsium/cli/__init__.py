@@ -7,9 +7,9 @@ def init():
     RRF.seed(Seed.value)
 
 
-class Cell(PlacedCell, TimerCell): pass
+#class Cell(PlacedCell, TimerCell): pass
 
-#class Cell(PlacedCell, SizerCell): pass
+class Cell(PlacedCell, SizerCell): pass
 
 
 def new_cell(cpg, cell_type):
