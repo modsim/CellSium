@@ -6,6 +6,8 @@ import numpy as np
 
 from stl import mesh
 
+class MeshCellScaleFactor(Tunable):
+    default = 1.0
 
 class MeshOutput(Output):
     def __init__(self):
@@ -17,8 +19,22 @@ class MeshOutput(Output):
         for boundary in world.boundaries:
             pass
 
+        scale_props = ('width', 'length')
+
         for cell in world.cells:
+            backup = {}
+
+            if MeshCellScaleFactor.value != 1.0:
+                for sp in scale_props:
+                    if hasattr(cell, sp):
+                        value = getattr(cell, sp)
+                        backup[sp] = value
+                        setattr(cell, sp, value * MeshCellScaleFactor.value)
+
             vertices, triangles = cell.points3d_on_canvas()
+
+            for k, v in backup.items():
+                setattr(cell, k, v)
 
             meshes.append(dict(vertices=vertices, triangles=triangles))
 
