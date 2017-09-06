@@ -17,6 +17,8 @@ from .. import Width, Height, Calibration, um_to_pixel, pixel_to_um
 
 from .plot import MicrometerPerCm
 
+from ..model import WithFluorescence
+
 
 def noise_attempt(times=5, m=10, n=512, r=None):
     def make_rand(n, r):
@@ -248,15 +250,13 @@ class FluorescenceRatioBackground(Tunable):
     default = 1.0
 
 
-class FluorescenceRatioCells(Tunable):
-    default = 350.0
-
-
 class FluorescenceCellSizeFactor(Tunable):
     default = 500.0
 
 
 class FluorescenceRenderer(PlainRenderer):
+
+    channel = 0
 
     def __init__(self):
         super(FluorescenceRenderer, self).__init__()
@@ -268,8 +268,6 @@ class FluorescenceRenderer(PlainRenderer):
         canvas = self.new_canvas()
 
         int_background = FluorescenceRatioBackground.value
-
-        int_cell = FluorescenceRatioCells.value * int_background
 
         emitter_size = (FluorescenceEmitterKernelSizeW.value, FluorescenceEmitterKernelSizeH.value)
 
@@ -287,8 +285,6 @@ class FluorescenceRenderer(PlainRenderer):
         sopou = SeqOfPairsOfUniform()
         sopou_gen = RRF.new(sopou.next)
 
-        heterogeneity = RRF.new(np.random.uniform, 0, 1)
-
         for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
             #
@@ -302,12 +298,16 @@ class FluorescenceRenderer(PlainRenderer):
                     (points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0])):
                 continue
 
-            # use real fluorescence value of the cell!
-            if next(heterogeneity) > 0.7:
-                brightness = int_cell * 0.5
-            else:
-                brightness = int_cell
+            if isinstance(cell, WithFluorescence):
+                if self.channel < len(cell.fluorescences):
+                    brightness = cell.fluorescences[self.channel] * int_background
+                else:
+                    brightness = 0
 
+            else:
+                brightness = 0
+
+            # TODO normalize by µm^2
             int_countdown = brightness * (cv2.contourArea(pts) / FluorescenceCellSizeFactor.value)
 
             sopou.set_bounds(points[:, 0].min(), points[:, 0].max(), points[:, 1].min(), points[:, 1].max())

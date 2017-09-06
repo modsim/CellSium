@@ -6,8 +6,10 @@ import numpy as np
 
 from stl import mesh
 
+
 class MeshCellScaleFactor(Tunable):
     default = 1.0
+
 
 class MeshOutput(Output):
     def __init__(self):

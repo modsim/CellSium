@@ -4,8 +4,6 @@ import numpy as np
 from ..geometry import *
 
 
-
-
 class Shape(object):
     @staticmethod
     def defaults():
@@ -162,7 +160,10 @@ class WithAngle(object):
         return dict(angle=0.0)
 
 
-
+class WithFluorescence(object):
+    @staticmethod
+    def defaults():
+        return dict(fluorescences=lambda: [0.0])
 
 
 class WithProperDivisionBehavior(object):
