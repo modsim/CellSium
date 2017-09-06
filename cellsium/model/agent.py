@@ -43,13 +43,13 @@ def next_cell_id():
 
 
 class WithLineage(object):
-    #__slots__ = 'id_', 'parent_id'
 
     def copy(self):
         copy = super(WithLineage, self).copy()
         copy.next_cell_id()
         return copy
 
+    # noinspection PyAttributeOutsideInit
     def next_cell_id(self):
         self.id_ = next_cell_id()
 

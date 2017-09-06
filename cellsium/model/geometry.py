@@ -22,7 +22,6 @@ class Shape3D(Shape):
 
 
 class RodShaped(Shape):
-    #__slots__ = 'length', 'width'
 
     @staticmethod
     def defaults():
@@ -62,7 +61,6 @@ class RodShaped(Shape):
 
 
 class BentRod(RodShaped):
-    #__slots__ = 'bend_overall', 'bend_upper', 'bend_lower'
 
     @staticmethod
     def defaults():
@@ -111,7 +109,6 @@ class BentRod(RodShaped):
 
 
 class Coccoid(Shape):
-    #__slots__ = 'length'
 
     @staticmethod
     def defaults():
@@ -127,7 +124,6 @@ class Coccoid(Shape):
 
 
 class Ellipsoid(Coccoid):
-    #__slots__ = 'width'
 
     @staticmethod
     def defaults():
@@ -145,7 +141,6 @@ class Ellipsoid(Coccoid):
 
 
 class WithPosition(object):
-    #__slots__ = 'position'
 
     @staticmethod
     def defaults():
@@ -153,7 +148,6 @@ class WithPosition(object):
 
 
 class WithAngle(object):
-    #__slots__ = 'angle'
 
     @staticmethod
     def defaults():
@@ -170,19 +164,17 @@ class WithProperDivisionBehavior(object):
     def get_division_positions(self, count=2):
         # must have a length, a position and an angle
 
-        sina, cosa = sin(self.angle), cos(self.angle)
+        sin_a, cos_a = sin(self.angle), cos(self.angle)
 
         x, y = self.position
 
         return [
             [
-                float(x + factor * cosa),
-                float(y + factor * sina)
+                float(x + factor * cos_a),
+                float(y + factor * sin_a)
             ]
             for factor in np.linspace(-self.length / 2 / 2, self.length / 2 / 2, num=count)
         ]
-
-
 
 
 class AutoMesh3D(Shape3D):

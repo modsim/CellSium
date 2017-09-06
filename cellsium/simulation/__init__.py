@@ -11,5 +11,5 @@ class BaseSimulator(object):
     def clear(self):
         pass
 
-    def step(self, timestep=0.0):
+    def step(self, timestep):
         pass

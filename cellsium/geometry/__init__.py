@@ -73,11 +73,11 @@ def cross_product_matrix(vec):
 # for Py3 this could be lru cache decorated, as the step-sizes of the angles
 # tend to be the same for each set of calculations
 def get_rotation_matrix3d_angle_axis(angle, axis_vector):
-    cosa, sina = np.cos(angle), np.sin(angle)
+    cos_a, sin_a = np.cos(angle), np.sin(angle)
 
-    r = cosa * np.eye(3) + \
-        sina*cross_product_matrix(axis_vector) + \
-        (1-cosa)*np.tensordot(axis_vector, axis_vector, axes=0).reshape((3, 3))
+    r = cos_a * np.eye(3) + \
+        sin_a*cross_product_matrix(axis_vector) + \
+        (1-cos_a)*np.tensordot(axis_vector, axis_vector, axes=0).reshape((3, 3))
 
     return r
 

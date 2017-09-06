@@ -28,11 +28,12 @@ class BoundariesFile(Tunable):
 
 class SimulationDuration(Tunable):
     default = 12.0
-    default = 16.0
+    # default = 16.0
+
 
 class SimulationOutputInterval(Tunable):
     default = 0.25
-    #default = 1.0/60.0
+    # default = 1.0/60.0
 
 
 class SimulationTimestep(Tunable):
@@ -105,18 +106,20 @@ def main():
 
         simulator.step(time_step)
 
-        #for cell in simulator.simulation.world.cells:
-        #    print(cell.length)
+        # for cell in simulator.simulation.world.cells:
+        #     print(cell.length)
 
         simulation_time += time_step
         after = time()
         print("Timestep took %.2fs, virtual time: %.2f" % (after - before, s_to_h(simulation_time)))
 
-        if (simulation_time - last_output) > h_to_s(SimulationOutputInterval.value) and SimulationOutputInterval.value > 0:
+        if \
+                ((simulation_time - last_output) > h_to_s(SimulationOutputInterval.value)
+                 and SimulationOutputInterval.value > 0):
             last_output = simulation_time
-            #output.display(simulator.simulation.world)
+            # output.display(simulator.simulation.world)
             # output.write(simulator.simulation.world, 'test.tif')
-            #json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
+            # json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
             qd.write(simulator.simulation.world, 'qd%03d.npz' % (output_count,), time=simulation_time)
 
             output_count += 1

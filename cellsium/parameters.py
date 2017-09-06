@@ -9,74 +9,81 @@ from . import Width, Height
 class RandomlyDistributed(Tunable):
     pass
 
-# class RandomDistribution(Tunable):
-#     default = 'normal'
-#
-#     @classmethod
-#     def test(cls, value):
-#         return cls.get(value)
-#
-#     @classmethod
-#     def get(cls):
-#         return getattr(np.random, value, False)
-
 
 class Seed(Tunable):
     default = '1'
 
 
-class NewCellCount(Tunable): default = 1
+class NewCellCount(Tunable):
+    default = 1
 
 
-class NewCellRadiusFromCenter(RandomlyDistributed): default = 5.0
+class NewCellRadiusFromCenter(RandomlyDistributed):
+    default = 5.0
 
 
-class NewCellWidthMean(RandomlyDistributed): default = 1.0
+class NewCellWidthMean(RandomlyDistributed):
+    default = 1.0
 
 
-class NewCellWidthStd(RandomlyDistributed): default = 0.1
+class NewCellWidthStd(RandomlyDistributed):
+    default = 0.1
 
 
-class NewCellWidthAbsoluteMax(Tunable): default = 1.5
+class NewCellWidthAbsoluteMax(Tunable):
+    default = 1.5
 
 
-class NewCellWidthAbsoluteMin(Tunable): default = 0.75
+class NewCellWidthAbsoluteMin(Tunable):
+    default = 0.75
 
 
-class NewCellLength1Mean(RandomlyDistributed): default = 2.5
+class NewCellLength1Mean(RandomlyDistributed):
+    default = 2.5
 
 
-class NewCellLength1Std(RandomlyDistributed): default = 0.15
+class NewCellLength1Std(RandomlyDistributed):
+    default = 0.15
 
 
-class NewCellLength2Mean(RandomlyDistributed): default = 1.25
+class NewCellLength2Mean(RandomlyDistributed):
+    default = 1.25
 
 
-class NewCellLength2Std(RandomlyDistributed): default = 0.15
+class NewCellLength2Std(RandomlyDistributed):
+    default = 0.15
 
 
-class NewCellLengthAbsoluteMax(Tunable): default = 3.5
+class NewCellLengthAbsoluteMax(Tunable):
+    default = 3.5
 
 
-class NewCellLengthAbsoluteMin(Tunable): default = 0.8
+class NewCellLengthAbsoluteMin(Tunable):
+    default = 0.8
 
 
-class NewCellBendOverallLower(RandomlyDistributed): default = -0.1
+class NewCellBendOverallLower(RandomlyDistributed):
+    default = -0.1
 
 
-class NewCellBendOverallUpper(RandomlyDistributed): default = 0.1
+class NewCellBendOverallUpper(RandomlyDistributed):
+    default = 0.1
 
 
-class NewCellBendUpperLower(RandomlyDistributed): default = -0.1
+class NewCellBendUpperLower(RandomlyDistributed):
+    default = -0.1
 
 
-class NewCellBendUpperUpper(RandomlyDistributed): default = 0.1
+class NewCellBendUpperUpper(RandomlyDistributed):
+    default = 0.1
 
 
-class NewCellBendLowerLower(RandomlyDistributed): default = -0.1
+class NewCellBendLowerLower(RandomlyDistributed):
+    default = -0.1
 
 
-class NewCellBendLowerUpper(RandomlyDistributed): default = 0.1
+class NewCellBendLowerUpper(RandomlyDistributed):
+    default = 0.1
 
 
 class CellParameterGenerator(object):

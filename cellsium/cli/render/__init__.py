@@ -7,6 +7,7 @@ from ...output.all import *
 
 from jsonpickle import loads
 
+
 def main():
     parser = argparse.ArgumentParser()
 

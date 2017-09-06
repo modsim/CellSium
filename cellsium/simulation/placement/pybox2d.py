@@ -1,12 +1,13 @@
 from .base import PlacementSimulation, PlacementSimulationSimplification
-import Box2D
+import Box2D as B2D
+
 
 class Box2D(PlacementSimulation):
 
     verbose = False
 
     def __init__(self):
-        self.world = Box2D.b2World()
+        self.world = B2D.b2World()
         self.world.gravity = 0, 0
 
         self.cell_bodies = {}
@@ -16,26 +17,26 @@ class Box2D(PlacementSimulation):
 
     def add_boundary(self, coordinates):
         coordinates = np.array(coordinates)
-        #self.world.CreateStaticBody(Box2D.b2PolygonShape)
+        # self.world.CreateStaticBody(B2D.b2PolygonShape)
 
         for start, stop in zip(coordinates, coordinates[1:]):
             self.boundaries.append([start, stop])
-            #segment = pymunk.Segment(new_body, start, stop, 0.0)
-            #self.space.add(segment)
+            # segment = pymunk.Segment(new_body, start, stop, 0.0)
+            # self.space.add(segment)
 
-        #self.space.add(new_body)
+        # self.space.add(new_body)
 
     def add(self, cell):
         assert PlacementSimulationSimplification.value != 0
 
         if PlacementSimulationSimplification.value == 2:
             shapes = [
-                Box2D.b2CircleShape(pos=offset, radius=radius)
+                B2D.b2CircleShape(pos=offset, radius=radius)
                 for radius, offset in cell.get_approximation_circles()
             ]
         else:
             shapes = [
-                Box2D.b2PolygonShape(vertices=cell.raw_points(simplify=PlacementSimulationSimplification.value == 1))
+                B2D.b2PolygonShape(vertices=cell.raw_points(simplify=PlacementSimulationSimplification.value == 1))
             ]
 
         body = self.world.CreateDynamicBody(
@@ -57,7 +58,7 @@ class Box2D(PlacementSimulation):
 
     def _get_positions(self):
         array = np.zeros((len(self.cell_bodies), 3))
-        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body: id(body))):
+        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body_: id(body_))):
             array[n, :] = body.position[0], body.position[1], body.angle
         return array
 

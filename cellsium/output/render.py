@@ -106,14 +106,14 @@ def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
     return canvas
 
 
-def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, oversample=1):
+def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_sample=1):
     dpi = 100.0
-    fig = pyplot.figure(frameon=False, dpi=int(dpi), figsize=(oversample * canvas.shape[1] / dpi, oversample * canvas.shape[0] / dpi))
+    fig = pyplot.figure(frameon=False, dpi=int(dpi), figsize=(over_sample * canvas.shape[1] / dpi, over_sample * canvas.shape[0] / dpi))
 
     ax = fig.add_axes([0, 0, 1, 1])
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
-        ax.add_patch(prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=oversample*0.25))
+        ax.add_patch(prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=over_sample * 0.25))
 
     plt = ax.imshow(canvas, cmap='gray')
 
@@ -131,7 +131,7 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, overs
 
     pyplot.close(fig.number)
 
-    if oversample != 1:
+    if over_sample != 1:
         cv2.resize(canvas_data, dst=canvas_data, dsize=canvas.shape[::-1], interpolation=cv2.INTER_AREA)
 
     return canvas_data
@@ -143,8 +143,10 @@ class PlainRenderer(Output):
 
     def __init__(self):
         super(PlainRenderer, self).__init__()
+        self.fig = self.ax = None
 
-    def new_canvas(self):
+    @staticmethod
+    def new_canvas():
         return new_canvas()
 
     def debug_output(self, name, array):
@@ -172,7 +174,8 @@ class PlainRenderer(Output):
 
         return canvas
 
-    def convert(self, image):
+    @staticmethod
+    def convert(image):
         return (np.clip(image, 0, 1) * 255).astype(np.uint8)
 
     def write(self, world, file_name):
@@ -379,7 +382,7 @@ class UnevenIlluminationAdditiveFactor(Tunable):
 
 
 class UnevenIlluminationMultiplicativeFactor(Tunable):
-    default = 0.05
+    # default = 0.05
     default = 0.25
 
 

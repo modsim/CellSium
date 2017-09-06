@@ -58,7 +58,7 @@ class MeshOutput(Output):
         result_mesh = mesh.Mesh(np.concatenate([single_mesh.data for single_mesh in stl_meshes]))
         result_mesh.save(file_name)
 
-    def display(self):
+    def display(self, world):
         raise RuntimeError('Unsupported')
 
 """

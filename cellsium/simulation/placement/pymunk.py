@@ -74,7 +74,7 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
 
     def _get_positions(self):
         array = np.zeros((len(self.cell_bodies), 3))
-        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body: id(body))):
+        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body_: id(body_))):
             array[n, :] = body.position[0], body.position[1], body.angle
         return array
 

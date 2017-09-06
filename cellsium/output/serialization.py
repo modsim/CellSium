@@ -1,5 +1,6 @@
 from . import Output
 
+import numpy as np
 import jsonpickle
 
 
@@ -14,10 +15,6 @@ class JsonPickleSerializer(Output):
     def display(self, world):
         print(self.output(world))
 
-
-
-
-import numpy as np
 
 def type2numpy(value):
     if isinstance(value, int):

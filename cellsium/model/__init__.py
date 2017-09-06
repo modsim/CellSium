@@ -46,6 +46,7 @@ class SimulatedCell(object):
         self.grow(ts=ts)
 
 
+# noinspection PyAttributeOutsideInit
 class SizerCell(SimulatedCell):
     sizer_series = RRF.new(np.random.normal, 3.0, 0.25)  # µm
 
@@ -61,6 +62,7 @@ class SizerCell(SimulatedCell):
             offspring_a.length = offspring_b.length = self.length / 2
 
 
+# noinspection PyAttributeOutsideInit
 class TimerCell(SimulatedCell):
     elongation_rate_series = RRF.new(np.random.normal, 1.5, 0.25)  # µm·h⁻¹
 

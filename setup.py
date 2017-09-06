@@ -24,6 +24,8 @@ setup(
         'scipy',
         'matplotlib',
         'tunable',
+        'jsonpickle',
+        'tqdm',
         'pymunk',
         'opencv',
         'numpy-stl',
