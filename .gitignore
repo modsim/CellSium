@@ -34,3 +34,6 @@ Thumbs.db
 *.json
 *.png
 *.tif
+*.npz
+*.stl
+*.dat
