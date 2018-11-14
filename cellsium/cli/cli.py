@@ -1,13 +1,7 @@
 import argparse
 
-import numpy as np
-from .. import s_to_h, h_to_s
-
 from time import time
-from tunable import Tunable, TunableSelectable
-
-from .. import Width, Height, Calibration
-from ..random import RRF
+from tunable import TunableSelectable
 
 from ..simulation.placement import PlacementSimulation
 

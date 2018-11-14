@@ -3,7 +3,6 @@ import numpy as np
 from tunable import Tunable
 
 from .random import RRF, enforce_bounds
-from . import Width, Height
 
 
 class RandomlyDistributed(Tunable):
@@ -120,3 +119,31 @@ class CellParameterGenerator(object):
 
         # does it make sense to make the angle configurable?
         self.angle = RRF.new(lambda: float(np.radians(np.random.uniform(0, 360.0))))
+
+
+class Width(Tunable):
+    default = 40.0
+
+
+class Height(Tunable):
+    default = 60.0
+
+
+class Calibration(Tunable):
+    default = 0.065
+
+
+def pixel_to_um(pix):
+    return pix * Calibration.value
+
+
+def um_to_pixel(um):
+    return um / Calibration.value
+
+
+def h_to_s(hours):
+    return hours * 60.0 * 60.0
+
+
+def s_to_h(seconds):
+    return seconds / (60.0 * 60.0)

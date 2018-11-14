@@ -1,4 +1,4 @@
-from .. import s_to_h, h_to_s
+from ..parameters import h_to_s, s_to_h
 from .agent import *
 from .geometry import *
 

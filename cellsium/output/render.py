@@ -13,7 +13,7 @@ from scipy.misc import bytescale
 from scipy.ndimage.interpolation import rotate
 from scipy.interpolate import interp1d
 from tunable import Tunable
-from .. import Width, Height, Calibration, um_to_pixel, pixel_to_um
+from ..parameters import Width, Height, Calibration, pixel_to_um, um_to_pixel
 
 from .plot import MicrometerPerCm
 

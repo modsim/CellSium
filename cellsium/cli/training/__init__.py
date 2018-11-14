@@ -1,13 +1,11 @@
 import tqdm
 import argparse
 
-import numpy as np
-
 from .. import new_cell, Cell, init
 from ...output.all import *
 
-from ... import Width, Height, Calibration, um_to_pixel, pixel_to_um
-from ...parameters import CellParameterGenerator, Seed, NewCellCount
+from ...parameters import pixel_to_um
+from ...parameters import CellParameterGenerator
 
 from ...simulation.simulator import *
 from ...simulation.placement import PlacementSimulation

@@ -1,4 +1,4 @@
-from .. import Width, Height
+from ..parameters import Width, Height
 from . import Output
 from tunable import Tunable
 from matplotlib import pyplot

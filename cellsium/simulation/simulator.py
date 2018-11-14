@@ -1,5 +1,5 @@
 import numpy as np
-from .. import s_to_h, h_to_s
+from ..parameters import h_to_s, s_to_h
 
 
 class World(object):
