@@ -107,6 +107,10 @@ def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
 
 
 def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_sample=1):
+    interaction_state = pyplot.isinteractive()
+
+    pyplot.ioff()
+
     dpi = 100.0
     fig = pyplot.figure(frameon=False, dpi=int(dpi), figsize=(over_sample * canvas.shape[1] / dpi, over_sample * canvas.shape[0] / dpi))
 
@@ -134,6 +138,9 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
     if over_sample != 1:
         cv2.resize(canvas_data, dst=canvas_data, dsize=canvas.shape[::-1], interpolation=cv2.INTER_AREA)
 
+    if interaction_state:
+        pyplot.ion()
+
     return canvas_data
 
 
@@ -143,7 +150,7 @@ class PlainRenderer(Output):
 
     def __init__(self):
         super(PlainRenderer, self).__init__()
-        self.fig = self.ax = None
+        self.fig = self.ax = self.imshow_data = None
 
     @staticmethod
     def new_canvas():
@@ -201,12 +208,15 @@ class PlainRenderer(Output):
             if getattr(self, 'ax', None) is None:
                 self.ax = self.fig.add_subplot(111)
 
-            self.ax.clear()
+            if getattr(self, 'imshow_data', None):
+                self.imshow_data.set_data(image)
+            else:
+                self.ax.clear()
+                self.imshow_data = self.ax.imshow(image, cmap='gray')
 
-            self.ax.imshow(image, cmap='gray')
+                pyplot.tight_layout()
+                pyplot.show()
 
-            pyplot.tight_layout()
-            pyplot.show()
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 
