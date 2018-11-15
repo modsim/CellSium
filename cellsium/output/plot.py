@@ -14,7 +14,7 @@ class PlotRenderer(Output, Output.Default):
 
         self.fig = self.ax = None
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         if self.fig is None:
             self.fig = pyplot.figure(
                 figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
@@ -44,11 +44,11 @@ class PlotRenderer(Output, Output.Default):
 
         return fig, ax
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
         fig, ax = self.output(world)
         fig.savefig(file_name)
 
-    def display(self, world):
+    def display(self, world, **kwargs):
         pyplot.ion()
         self.output(world)
         pyplot.show()

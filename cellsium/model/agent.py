@@ -58,6 +58,12 @@ class WithLineage(object):
         return dict(id_=lambda: next_cell_id(), parent_id=0)
 
 
+class WithLineageHistory(object):
+    @staticmethod
+    def defaults():
+        return dict(lineage_history=lambda: [0])
+
+
 class WithTemporalLineage(object):
     @staticmethod
     def defaults():

@@ -78,7 +78,7 @@ def main():
         cell.birth()
         simulator.add(cell)
 
-    output = Output()
+    outputs = Output.SelectableGetMultiple()
 
     simulation_time = 0.0
 
@@ -87,9 +87,6 @@ def main():
     total_before = time()
 
     time_step = h_to_s(SimulationTimestep.value)
-
-    json = JsonPickleSerializer()
-    qd = QuickAndDirtyTableDumper()
 
     output_count = 0
 
@@ -111,20 +108,27 @@ def main():
                 ((simulation_time - last_output) > h_to_s(SimulationOutputInterval.value)
                  and SimulationOutputInterval.value > 0):
             last_output = simulation_time
-            # output.display(simulator.simulation.world)
-            # output.write(simulator.simulation.world, 'test.tif')
-            # json.write(simulator.simulation.world, 'frame%03d.json' % (output_count,))
-            qd.write(simulator.simulation.world, 'qd%03d.npz' % (output_count,), time=simulation_time)
+
+            for output in outputs:
+            #    # output.display(simulator.simulation.world)
+                if args.output:
+                    try:
+                        output_name = args.output % (output_count,)
+                    except TypeError:
+                        output_name = args.output
+                    output.write(simulator.simulation.world, output_name, time=simulation_time)
+                else:
+                    output.display(simulator.simulation.world)
 
             output_count += 1
 
     total_after = time()
     print("Whole simulation took %.2fs" % (total_after - total_before))
-    raise SystemExit
-    if args.output:
-        output.write(simulator.simulation.world, args.output)
-    else:
-        try:
-            output.display(simulator.simulation.world)
-        except RuntimeError:
-            print("Display not possible")
+
+    # if args.output:
+    #     output.write(simulator.simulation.world, args.output)
+    # else:
+    #     try:
+    #         output.display(simulator.simulation.world)
+    #     except RuntimeError:
+    #         print("Display not possible")

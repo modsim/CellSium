@@ -146,7 +146,7 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
 
 class PlainRenderer(Output):
 
-    write_debug_output = True
+    write_debug_output = False
 
     def __init__(self):
         super(PlainRenderer, self).__init__()
@@ -162,7 +162,7 @@ class PlainRenderer(Output):
 
         cv2.imwrite('render-%s.png' % (name,), bytescale(array))
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         canvas = self.new_canvas()
 
         array_of_points = []
@@ -185,10 +185,10 @@ class PlainRenderer(Output):
     def convert(image):
         return (np.clip(image, 0, 1) * 255).astype(np.uint8)
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
         cv2.imwrite(file_name, self.convert(self.output(world)))
 
-    def display(self, world):
+    def display(self, world, **kwargs):
 
         image = self.output(world)
 
@@ -277,7 +277,7 @@ class FluorescenceRenderer(PlainRenderer):
 
         self.random_noise = RRF.new(np.random.normal, FluorescenceNoiseMean.value, FluorescenceNoiseStd.value, canvas.shape)
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         canvas = self.new_canvas()
 
         int_background = FluorescenceRatioBackground.value
@@ -352,7 +352,7 @@ class FluorescenceRenderer(PlainRenderer):
 
 
 class PhaseContrastRenderer(PlainRenderer):
-    def output(self, world):
+    def output(self, world, **kwargs):
         cell_canvas = super(PhaseContrastRenderer, self).output(world)
 
         background = LuminanceBackground.value * np.ones_like(cell_canvas)
@@ -415,7 +415,7 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def create_uneven_illumination(self):
         self.uneven_illumination = self.new_uneven_illumination()
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         canvas = super(UnevenIlluminationPhaseContrast, self).output(world)
 
         self.debug_output('uneven-illumination', self.uneven_illumination)
@@ -439,7 +439,7 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
         self.product_noise = RRF.new(np.random.normal, 1.0, 0.002, empty.shape)
         self.sum_noise = RRF.new(np.random.normal, 0.0, 0.002, empty.shape)
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         canvas = super(NoisyUnevenIlluminationPhaseContrast, self).output(world)
 
         product_noise = next(self.product_noise)
@@ -458,6 +458,7 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
 class TiffOutput(Output):
 
     channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
+    channels = [NoisyUnevenIlluminationPhaseContrast] # , FluorescenceRenderer]
     output_type = np.uint8
 
     def __init__(self):
@@ -466,7 +467,7 @@ class TiffOutput(Output):
         self.current = -1
         self.writer = None
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         return [c.output(world) for c in self.channels]
 
     def __del__(self):
@@ -489,7 +490,9 @@ class TiffOutput(Output):
 
         self.writer.save(result)
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
+        if not file_name.endswith('.tif'):
+            file_name += '.tif'
         if self.writer is None:
             self.writer = TiffWriter(file_name)
 

@@ -8,7 +8,7 @@ from math import log
 from ..random import RRF
 
 
-class PlacedCell(WithLineage, WithTemporalLineage, WithProperDivisionBehavior, InitializeWithParameters, Copyable, CellGeometry, BentRod):
+class PlacedCell(WithLineageHistory, WithLineage, WithTemporalLineage, WithProperDivisionBehavior, InitializeWithParameters, Copyable, CellGeometry, BentRod):
     pass
 
 
@@ -27,6 +27,10 @@ class SimulatedCell(object):
 
         if isinstance(self, WithLineage):
             offspring_a.parent_id = offspring_b.parent_id = self.id_
+
+        if isinstance(self, WithLineageHistory):
+            offspring_a.lineage_history = self.lineage_history[:] + [self.id_]
+            offspring_b.lineage_history = self.lineage_history[:] + [self.id_]
 
         if isinstance(self, WithTemporalLineage):
             now = ts.simulation.time

@@ -45,7 +45,7 @@ class SvgRenderer(Output):
     def points_to_path(points):
         return 'M' + (''.join('L%f %f' % tuple(point) for point in points))[1:] + 'Z'
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         for boundary in world.boundaries:
             boundary_element = ET.SubElement(self.group_boundary, 'path')
             boundary_element.attrib['class'] = 'boundary'
@@ -59,10 +59,10 @@ class SvgRenderer(Output):
             cell_path.attrib['class'] = 'cell'
             cell_path.attrib['d'] = self.points_to_path(cell.points_on_canvas())
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
         self.output(world)
         self.xml.write(file_name)
 
-    def display(self, world):
+    def display(self, world, **kwargs):
         raise RuntimeError('Unsupported')
 

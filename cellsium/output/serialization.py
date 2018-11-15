@@ -34,7 +34,7 @@ def prepare_numpy_dtype(inner):
 
 
 class QuickAndDirtyTableDumper(Output):
-    def output(self, world):
+    def output(self, world, **kwargs):
         first_cell = world.cells[0]
         cell_count = len(world.cells)
 
@@ -47,6 +47,6 @@ class QuickAndDirtyTableDumper(Output):
 
         return array
 
-    def write(self, world, file_name, time=None):
+    def write(self, world, file_name, time=None, **kwargs):
         np.savez(file_name, time=time, cells=self.output(world))
 

@@ -15,7 +15,7 @@ class MeshOutput(Output):
     def __init__(self):
         super(MeshOutput, self).__init__()
 
-    def output(self, world):
+    def output(self, world, **kwargs):
         meshes = []
 
         for boundary in world.boundaries:
@@ -42,7 +42,7 @@ class MeshOutput(Output):
 
         return meshes
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
         meshes = self.output(world)
 
         stl_meshes = []
@@ -58,7 +58,7 @@ class MeshOutput(Output):
         result_mesh = mesh.Mesh(np.concatenate([single_mesh.data for single_mesh in stl_meshes]))
         result_mesh.save(file_name)
 
-    def display(self, world):
+    def display(self, world, **kwargs):
         raise RuntimeError('Unsupported')
 
 """
