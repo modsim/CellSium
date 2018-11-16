@@ -1,6 +1,18 @@
 from ..parameters import Width, Height, Calibration, um_to_pixel
 from . import Output
 
+from tunable import Tunable
+
+
+class TrackMateXMLExportFluorescences(Tunable):
+    # default = 'Crimson,YFP'
+    default = ''
+
+
+class TrackMateXMLExportLengthTypo(Tunable):
+    default = True
+
+
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 
@@ -76,18 +88,6 @@ EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
         name="Visibility" shortname="Visibility" dimension="NONE" isint="true" />
         <Feature feature="PIXELS" 
         name="Pixels" shortname="Pixels" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_TOTAL" 
-        name="YFP Total" shortname="YFPTot" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_MEAN" 
-        name="YFP Mean" shortname="YFP" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_STDDEV" 
-        name="YFP StdDev" shortname="YFP SD" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_TOTAL" 
-        name="Crimson Total" shortname="CrimsonTot" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_MEAN" 
-        name="Crimson Mean" shortname="Crimson" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_STDDEV" 
-        name="Crimson StdDev" shortname="Crimson SD" dimension="INTENSITY" isint="false" />
         <Feature feature="AREA" 
         name="Cell area" shortname="Area" dimension="INTENSITY_SQUARED" isint="false" />
         <Feature feature="LENGHT" 
@@ -138,6 +138,40 @@ class TrackMateXML(Output):
         settings['xend'] = str(int(um_to_pixel(Width.value)))
         settings['yend'] = str(int(um_to_pixel(Height.value)))
 
+        spot_features = self.root.find('Model/FeatureDeclarations/SpotFeatures')
+
+        for f in TrackMateXMLExportFluorescences.value.split(','):
+            if not f:
+                continue
+            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
+                feature='%s_FLUORESCENCE_MEAN' % f.upper(),
+                name='%s Mean' % f,
+                shortname='%s' % f,
+                dimension='INTENSITY',
+                isint='false'
+            ))
+
+            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
+                feature='%s_FLUORESCENCE_STDDEV' % f.upper(),
+                name='%s StdDev' % f,
+                shortname='%s SD' % f,
+                dimension='INTENSITY',
+                isint='false'
+            ))
+
+            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
+                feature='%s_FLUORESCENCE_TOTAL' % f.upper(),
+                name='%s Total' % f,
+                shortname='%sTot' % f,
+                dimension='INTENSITY',
+                isint='false'
+            ))
+
+        if not TrackMateXMLExportLengthTypo.value:
+            for feature in spot_features:
+                if feature.attrib['feature'] == 'LENGHT':
+                    feature.attrib['feature'] = 'LENGTH'
+
         self.basic_settings = settings
 
         self.frame_counter = 0
@@ -150,11 +184,10 @@ class TrackMateXML(Output):
         self.id_to_cell = {}
 
         self.tracks = {}
+        self.track_counter = 0
 
         self.all_tracks = self.root.find('Model/AllTracks')
         self.filtered_tracks = self.root.find('Model/FilteredTracks')
-
-        # set nframes, timeinterval
 
     def output(self, world, time=0.0, **kwargs):
         frame_counter = self.frame_counter
@@ -170,7 +203,8 @@ class TrackMateXML(Output):
 
         def add_track():
             elem = ET.SubElement(self.all_tracks, 'Track')
-            track_count = len(self.tracks) + 1
+            self.track_counter += 1
+            track_count = self.track_counter
             elem.attrib['name'] = 'Track_' + str(track_count)
             elem.attrib['TRACK_INDEX'] = str(track_count)
             elem.attrib['TRACK_ID'] = str(track_count)
@@ -228,19 +262,24 @@ class TrackMateXML(Output):
             spot.attrib['ID'] = str(self.cell_to_spot[cell])
             spot.attrib['name'] = str(self.cell_to_spot[cell])
 
-            spot.attrib['YFP_FLUORESCENCE_TOTAL'] = '0.0'
-            spot.attrib['YFP_FLUORESCENCE_MEAN'] = '0.0'
-            spot.attrib['YFP_FLUORESCENCE_STDDEV'] = '0.0'
+            for f in TrackMateXMLExportFluorescences.value.split(','):
+                if not f:
+                    continue
 
-            spot.attrib['CRIMSON_FLUORESCENCE_TOTAL'] = '0.0'
-            spot.attrib['CRIMSON_FLUORESCENCE_MEAN'] = '0.0'
-            spot.attrib['CRIMSON_FLUORESCENCE_STDDEV'] = '0.0'
+                spot.attrib['%s_FLUORESCENCE_TOTAL' % f.upper()] = '0.0'
+                spot.attrib['%s_FLUORESCENCE_MEAN' % f.upper()] = '0.0'
+                spot.attrib['%s_FLUORESCENCE_STDDEV' % f.upper()] = '0.0'
 
             spot.attrib['AREA'] = str(0.0)
             spot.attrib['VISIBILITY'] = str(1)
 
             spot.attrib['POSITION_T'] = str(time)  # minutes or seconds?
-            spot.attrib['LENGHT'] = str(cell.length)  # sic!
+
+            if not TrackMateXMLExportLengthTypo.value:
+                spot.attrib['LENGTH'] = str(cell.length)
+            else:
+                spot.attrib['LENGHT'] = str(cell.length)  # sic!
+
             spot.attrib['PIXELS'] = str(0.0)
 
             spot.attrib['POSITION_X'] = str(um_to_pixel(cell.position[0]))
