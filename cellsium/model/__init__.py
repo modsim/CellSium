@@ -8,7 +8,16 @@ from math import log
 from ..random import RRF
 
 
-class PlacedCell(WithLineageHistory, WithLineage, WithTemporalLineage, WithProperDivisionBehavior, InitializeWithParameters, Copyable, CellGeometry, BentRod):
+class PlacedCell(
+    WithLineageHistory,
+    WithLineage,
+    WithTemporalLineage,
+    WithProperDivisionBehavior,
+    InitializeWithParameters,
+    Copyable,
+    CellGeometry,
+    BentRod
+):
     pass
 
 

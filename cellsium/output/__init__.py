@@ -1,7 +1,5 @@
 from tunable import Selectable
 
-import numpy as np
-
 
 class Output(Selectable, Selectable.Multiple):
     def output(self, world, **kwargs):

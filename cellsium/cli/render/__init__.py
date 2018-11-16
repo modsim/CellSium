@@ -1,11 +1,10 @@
 import argparse
+import jsonpickle
 
 from tunable import Tunable, TunableSelectable
 
 from .. import init
 from ...output.all import *
-
-from jsonpickle import loads
 
 
 def main():
@@ -25,6 +24,6 @@ def main():
     with open(args.input, 'r') as fp:
         data = fp.read()
 
-    data = loads(data)
+    data = jsonpickle.decode(data)
 
     output.write(data, args.output)

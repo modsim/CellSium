@@ -1,4 +1,7 @@
 from .base import PlacementSimulation, PlacementSimulationSimplification
+
+import numpy as np
+# noinspection PyPep8Naming
 import Box2D as B2D
 
 

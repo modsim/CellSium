@@ -88,6 +88,9 @@ def main():
 
     from time import time
 
+    pyplot = fig = ax = aximg = None
+    before = after = counter = 0
+
     if show:
 
         from matplotlib import pyplot

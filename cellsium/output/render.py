@@ -21,12 +21,15 @@ from ..model import WithFluorescence
 
 
 def noise_attempt(times=5, m=10, n=512, r=None):
+    # noinspection PyShadowingNames
     def make_rand(n, r):
         return interp1d(np.linspace(0, n, num=n), np.array([next(r) for _ in range(n)]), kind='cubic')
 
+    # noinspection PyShadowingNames
     def make_square(array):
         return np.tile(array, len(array)).reshape((len(array), len(array)))
 
+    # noinspection PyShadowingNames
     def make_it(n, m, r):
         return make_square(make_rand(m, r)(np.linspace(0, m, n)))
 
@@ -112,12 +115,18 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
     pyplot.ioff()
 
     dpi = 100.0
-    fig = pyplot.figure(frameon=False, dpi=int(dpi), figsize=(over_sample * canvas.shape[1] / dpi, over_sample * canvas.shape[0] / dpi))
+    fig = pyplot.figure(
+        frameon=False,
+        dpi=int(dpi),
+        figsize=(over_sample * canvas.shape[1] / dpi, over_sample * canvas.shape[0] / dpi)
+    )
 
     ax = fig.add_axes([0, 0, 1, 1])
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
-        ax.add_patch(prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=over_sample * 0.25))
+        ax.add_patch(
+            prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=over_sample * 0.25)
+        )
 
     plt = ax.imshow(canvas, cmap='gray')
 
@@ -275,7 +284,12 @@ class FluorescenceRenderer(PlainRenderer):
         super(FluorescenceRenderer, self).__init__()
         canvas = self.new_canvas()
 
-        self.random_noise = RRF.new(np.random.normal, FluorescenceNoiseMean.value, FluorescenceNoiseStd.value, canvas.shape)
+        self.random_noise = RRF.new(
+            np.random.normal,
+            FluorescenceNoiseMean.value,
+            FluorescenceNoiseStd.value,
+            canvas.shape
+        )
 
     def output(self, world, **kwargs):
         canvas = self.new_canvas()
@@ -457,8 +471,8 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
 
 class TiffOutput(Output):
 
-    channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
-    channels = [NoisyUnevenIlluminationPhaseContrast] # , FluorescenceRenderer]
+    # channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
+    channels = [NoisyUnevenIlluminationPhaseContrast]
     output_type = np.uint8
 
     def __init__(self):

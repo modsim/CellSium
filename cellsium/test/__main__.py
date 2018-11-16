@@ -43,13 +43,13 @@ def collect_modules_recursive(start, blacklist=None):
     return list(sorted(collector, key=lambda module: module.__name__))
 
 
-def run_tests_recursively(start_module, blacklist=None, exit=True, quiet=False):
+def run_tests_recursively(start_module, blacklist=None, exit_afterwards=True, quiet=False):
     """
     Runs doctests recursively.
 
     :param start_module: the top module to start from
     :param blacklist: a string or list of strings of module (sub)names which should be ignored.
-    :param exit: whether to exit with return code
+    :param exit_afterwards: whether to exit with return code
     :param quiet: whether to print infos about tests
     :return:
     """
@@ -67,7 +67,7 @@ def run_tests_recursively(start_module, blacklist=None, exit=True, quiet=False):
         if not quiet:
             print("Test failures occurred, exiting with non-zero status.")
 
-        if exit:
+        if exit_afterwards:
             sys.exit(1)
 
 

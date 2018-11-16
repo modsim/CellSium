@@ -1,19 +1,21 @@
 from ..parameters import Width, Height, Calibration, um_to_pixel
 from . import Output
-from tunable import Tunable
 
+# noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 
 
 EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <TrackMate version="2.7.3">
   <Settings>
-    <ImageData filename="FILENAME" folder="" width="1" height="1" nslices="1" nframes="2" pixelwidth="1.0" pixelheight="1.0" voxeldepth="1.0" timeinterval="1.0" />
+    <ImageData filename="FILENAME" folder="" width="1" height="1" nslices="1" nframes="2" pixelwidth="1.0" 
+    pixelheight="1.0" voxeldepth="1.0" timeinterval="1.0" />
     <BasicSettings xstart="0" xend="1" ystart="0" yend="1" zstart="0" zend="0" tstart="0" tend="2" />
 <InitialSpotFilter feature="QUALITY" value="0.0" isabove="true" />
     <DetectorSettings DETECTOR_NAME="OVERLAY_DETECTOR" TARGET_CHANNEL="1" />
     <SpotFilterCollection />
-    <TrackerSettings TRACKER_NAME="SPARSE_LAP_TRACKER" CUTOFF_PERCENTILE="0.9" ALTERNATIVE_LINKING_COST_FACTOR="1.05" BLOCKING_VALUE="Infinity">
+    <TrackerSettings TRACKER_NAME="SPARSE_LAP_TRACKER" CUTOFF_PERCENTILE="0.9"
+    ALTERNATIVE_LINKING_COST_FACTOR="1.05" BLOCKING_VALUE="Infinity">
       <Linking LINKING_MAX_DISTANCE="15.0">
         <FeaturePenalties />
       </Linking>
@@ -56,23 +58,40 @@ EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
   <Model spatialunits="pixels" timeunits="frames">
     <FeatureDeclarations>
       <SpotFeatures>
-        <Feature feature="QUALITY" name="Quality" shortname="Quality" dimension="QUALITY" isint="false" />
-        <Feature feature="POSITION_X" name="X" shortname="X" dimension="POSITION" isint="false" />
-        <Feature feature="POSITION_Y" name="Y" shortname="Y" dimension="POSITION" isint="false" />
-        <Feature feature="POSITION_Z" name="Z" shortname="Z" dimension="POSITION" isint="false" />
-        <Feature feature="POSITION_T" name="T" shortname="T" dimension="TIME" isint="false" />
-        <Feature feature="FRAME" name="Frame" shortname="Frame" dimension="NONE" isint="true" />
-        <Feature feature="RADIUS" name="Radius" shortname="R" dimension="LENGTH" isint="false" />
-        <Feature feature="VISIBILITY" name="Visibility" shortname="Visibility" dimension="NONE" isint="true" />
-        <Feature feature="PIXELS" name="Pixels" shortname="Pixels" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_TOTAL" name="YFP Total" shortname="YFPTot" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_MEAN" name="YFP Mean" shortname="YFP" dimension="INTENSITY" isint="false" />
-        <Feature feature="YFP_FLUORESCENCE_STDDEV" name="YFP StdDev" shortname="YFP SD" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_TOTAL" name="Crimson Total" shortname="CrimsonTot" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_MEAN" name="Crimson Mean" shortname="Crimson" dimension="INTENSITY" isint="false" />
-        <Feature feature="CRIMSON_FLUORESCENCE_STDDEV" name="Crimson StdDev" shortname="Crimson SD" dimension="INTENSITY" isint="false" />
-        <Feature feature="AREA" name="Cell area" shortname="Area" dimension="INTENSITY_SQUARED" isint="false" />
-        <Feature feature="LENGHT" name="Cell length" shortname="Length" dimension="LENGTH" isint="false" />
+        <Feature feature="QUALITY" 
+        name="Quality" shortname="Quality" dimension="QUALITY" isint="false" />
+        <Feature feature="POSITION_X" 
+        name="X" shortname="X" dimension="POSITION" isint="false" />
+        <Feature feature="POSITION_Y" 
+        name="Y" shortname="Y" dimension="POSITION" isint="false" />
+        <Feature feature="POSITION_Z" 
+        name="Z" shortname="Z" dimension="POSITION" isint="false" />
+        <Feature feature="POSITION_T" 
+        name="T" shortname="T" dimension="TIME" isint="false" />
+        <Feature feature="FRAME" 
+        name="Frame" shortname="Frame" dimension="NONE" isint="true" />
+        <Feature feature="RADIUS" 
+        name="Radius" shortname="R" dimension="LENGTH" isint="false" />
+        <Feature feature="VISIBILITY" 
+        name="Visibility" shortname="Visibility" dimension="NONE" isint="true" />
+        <Feature feature="PIXELS" 
+        name="Pixels" shortname="Pixels" dimension="INTENSITY" isint="false" />
+        <Feature feature="YFP_FLUORESCENCE_TOTAL" 
+        name="YFP Total" shortname="YFPTot" dimension="INTENSITY" isint="false" />
+        <Feature feature="YFP_FLUORESCENCE_MEAN" 
+        name="YFP Mean" shortname="YFP" dimension="INTENSITY" isint="false" />
+        <Feature feature="YFP_FLUORESCENCE_STDDEV" 
+        name="YFP StdDev" shortname="YFP SD" dimension="INTENSITY" isint="false" />
+        <Feature feature="CRIMSON_FLUORESCENCE_TOTAL" 
+        name="Crimson Total" shortname="CrimsonTot" dimension="INTENSITY" isint="false" />
+        <Feature feature="CRIMSON_FLUORESCENCE_MEAN" 
+        name="Crimson Mean" shortname="Crimson" dimension="INTENSITY" isint="false" />
+        <Feature feature="CRIMSON_FLUORESCENCE_STDDEV" 
+        name="Crimson StdDev" shortname="Crimson SD" dimension="INTENSITY" isint="false" />
+        <Feature feature="AREA" 
+        name="Cell area" shortname="Area" dimension="INTENSITY_SQUARED" isint="false" />
+        <Feature feature="LENGHT" 
+        name="Cell length" shortname="Length" dimension="LENGTH" isint="false" />
       </SpotFeatures>
       <EdgeFeatures>
         <Feature feature="SPOT_SOURCE_ID" name="Source spot ID" shortname="Source ID" dimension="NONE" isint="true" />
@@ -180,9 +199,10 @@ class TrackMateXML(Output):
             self.spot_to_cell[self.spot_counter] = cell
             self.id_to_cell[cell.id_] = cell
 
-        def sub_sequences(seq):
-            for n in range(len(seq)):
-                yield seq[n:]
+        # # when dealing with local history sequences
+        # def sub_sequences(seq):
+        #     for n in range(len(seq)):
+        #         yield seq[n:]
 
         for cell in world.cells:
             spot = ET.SubElement(group, 'Spot')
@@ -204,7 +224,6 @@ class TrackMateXML(Output):
                             self.cell_to_spot[cell]
                         )
                         self.tracks[cell] = self.tracks[old_id_to_cell[cell.parent_id]]
-
 
             spot.attrib['ID'] = str(self.cell_to_spot[cell])
             spot.attrib['name'] = str(self.cell_to_spot[cell])
@@ -235,6 +254,7 @@ class TrackMateXML(Output):
 
         self.all_spots.attrib['nspots'] = str(self.spot_counter)
 
+    # noinspection PyMethodOverriding
     def write(self, world, file_name, time, **kwargs):
         self.output(world, time=time)
 

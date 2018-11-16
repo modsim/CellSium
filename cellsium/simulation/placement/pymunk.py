@@ -4,6 +4,7 @@ import numpy as np
 
 import pymunkoptions
 pymunkoptions.options['debug'] = False
+# noinspection PyPep8
 import pymunk
 
 
@@ -94,6 +95,7 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
         resolution = 0.1 * 10
         times = timestep / resolution
         last = self.inner_step(time_step=resolution, iterations=int(times), epsilon=1e-12)
+        _ = last
 
     def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
         converging = False

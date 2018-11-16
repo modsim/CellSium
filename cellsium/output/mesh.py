@@ -1,4 +1,3 @@
-from ..parameters import Width, Height
 from . import Output
 from tunable import Tunable
 
@@ -18,8 +17,8 @@ class MeshOutput(Output):
     def output(self, world, **kwargs):
         meshes = []
 
-        for boundary in world.boundaries:
-            pass
+        # for boundary in world.boundaries:
+        #     pass
 
         scale_props = ('width', 'length')
 
@@ -59,22 +58,7 @@ class MeshOutput(Output):
         result_mesh.save(file_name)
 
     def display(self, world, **kwargs):
+        # ax = fig.add_subplot(111, projection='3d')
+        # ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2])
+        # ax.set_aspect('equal', 'datalim')
         raise RuntimeError('Unsupported')
-
-"""
-
-
-
-        from matplotlib import pyplot
-        from mpl_toolkits.mplot3d import Axes3D
-        fig = pyplot.figure()
-        ax = fig.add_subplot(111, projection='3d')
-
-
-        ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2])
-
-        ax.set_aspect('equal', 'datalim')
-        pyplot.show()
-
-
-"""

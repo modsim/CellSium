@@ -5,14 +5,14 @@ import jsonpickle
 
 
 class JsonPickleSerializer(Output):
-    def output(self, world):
+    def output(self, world, **kwargs):
         return jsonpickle.dumps(world)
 
-    def write(self, world, file_name):
+    def write(self, world, file_name, **kwargs):
         with open(file_name, 'w+') as fp:
             fp.write(self.output(world))
 
-    def display(self, world):
+    def display(self, world, **kwargs):
         print(self.output(world))
 
 
