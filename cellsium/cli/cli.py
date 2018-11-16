@@ -1,3 +1,4 @@
+import sys
 import argparse
 
 from time import time
@@ -32,6 +33,10 @@ class SimulationOutputInterval(Tunable):
 
 class SimulationTimestep(Tunable):
     default = 1.0 / 60.0
+
+
+class SimulationOutputFirstState(Tunable):
+    default = False
 
 
 def add_boundaries_from_dxf(file_name, simulator):
@@ -83,6 +88,9 @@ def main():
     simulation_time = 0.0
 
     last_output = 0.0
+
+    if SimulationOutputFirstState.value:
+        last_output = -(h_to_s(SimulationOutputInterval.value) + sys.float_info.epsilon)
 
     total_before = time()
 
