@@ -1,16 +1,17 @@
 import sys
 import argparse
+import logging
 
 from time import time
 from tunable import TunableSelectable
 
 from ..simulation.placement import PlacementSimulation
 
-from ..simulation.simulator import *
+from ..simulation.simulator import Simulator
 
 from ..output.all import *
 
-from ..parameters import CellParameterGenerator, Seed, NewCellCount
+from ..parameters import CellParameterGenerator, Seed, NewCellCount, h_to_s, s_to_h
 
 from . import Cell
 
@@ -23,12 +24,10 @@ class BoundariesFile(Tunable):
 
 class SimulationDuration(Tunable):
     default = 12.0
-    # default = 16.0
 
 
 class SimulationOutputInterval(Tunable):
     default = 0.25
-    # default = 1.0/60.0
 
 
 class SimulationTimestep(Tunable):
@@ -58,15 +57,32 @@ def add_boundaries_from_dxf(file_name, simulator):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(asctime)-15s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    log = logging.getLogger(__name__)
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-o', '--output-file', dest='output', default=None)
+    verbose_group = parser.add_mutually_exclusive_group()
+    verbose_group.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true')
+    verbose_group.add_argument('-v', '--verbose', dest='verbose', default=1, action='count')
 
     TunableSelectable.setup_and_parse(parser)
 
     args = parser.parse_args()
 
+    if args.quiet:
+        log.setLevel(logging.WARNING)
+    elif args.verbose == 1:
+        log.setLevel(logging.INFO)
+    else:
+        # possibly switch on more debug settings
+        log.setLevel(logging.DEBUG)
+
     RRF.seed(Seed.value)
+
+    log.info("Seeding with %s" % (Seed.value,))
 
     cpg = CellParameterGenerator()
 
@@ -98,45 +114,40 @@ def main():
 
     output_count = 0
 
-    multi_output = {}
+    if SimulationDuration.value < 0:
+        log.info("Simulation running in infinite mode ... press Ctrl-C to abort.")
 
     while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
         before = time()
 
         simulator.step(time_step)
 
-        # for cell in simulator.simulation.world.cells:
-        #     print(cell.length)
-
         simulation_time += time_step
         after = time()
-        print("Timestep took %.2fs, virtual time: %.2f" % (after - before, s_to_h(simulation_time)))
 
-        if \
-                ((simulation_time - last_output) > h_to_s(SimulationOutputInterval.value)
-                 and SimulationOutputInterval.value > 0):
-            last_output = simulation_time
+        log.info("Timestep took %.2fs, virtual time: %.2f h" % (after - before, s_to_h(simulation_time)))
 
-            for output in outputs:
-            #    # output.display(simulator.simulation.world)
-                if args.output:
-                    try:
-                        output_name = args.output % (output_count,)
-                    except TypeError:
-                        output_name = args.output
-                    output.write(simulator.simulation.world, output_name, time=simulation_time)
-                else:
-                    output.display(simulator.simulation.world)
+        if SimulationOutputInterval.value > 0:
+            if (simulation_time - last_output) >= h_to_s(SimulationOutputInterval.value):
+                last_output = simulation_time
 
-            output_count += 1
+                log.debug("Outputting simulation state at %.2f h" % (s_to_h(simulation_time),))
+
+                for output in outputs:
+                    output_before = time()
+                    if args.output:
+                        try:
+                            output_name = args.output % (output_count,)
+                        except TypeError:
+                            output_name = args.output
+                        output.write(simulator.simulation.world, output_name, time=simulation_time)
+                    else:
+                        output.display(simulator.simulation.world)
+                    output_after = time()
+
+                    log.debug("Output %s took %.2fs" % (output.__class__.__name__, output_after - output_before))
+
+                output_count += 1
 
     total_after = time()
-    print("Whole simulation took %.2fs" % (total_after - total_before))
-
-    # if args.output:
-    #     output.write(simulator.simulation.world, args.output)
-    # else:
-    #     try:
-    #         output.display(simulator.simulation.world)
-    #     except RuntimeError:
-    #         print("Display not possible")
+    log.info("Whole simulation took %.2fs" % (total_after - total_before))
