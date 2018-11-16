@@ -32,7 +32,6 @@ Thumbs.db
 *.png
 *.svg
 *.json
-*.png
 *.tif
 *.npz
 *.stl
