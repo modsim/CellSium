@@ -259,6 +259,10 @@ class TrackMateXML(Output):
                         )
                         self.tracks[cell] = self.tracks[old_id_to_cell[cell.parent_id]]
 
+            # current simple workaround: if we could not find the right origin, we create a new one
+            if cell not in self.tracks:
+                self.tracks[cell] = add_track()
+
             spot.attrib['ID'] = str(self.cell_to_spot[cell])
             spot.attrib['name'] = str(self.cell_to_spot[cell])
 
