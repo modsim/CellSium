@@ -5,8 +5,8 @@ from tunable import Tunable
 
 
 class TrackMateXMLExportFluorescences(Tunable):
-    # default = 'Crimson,YFP'
-    default = ''
+    # default = ''
+    default = 'Crimson,YFP'
 
 
 class TrackMateXMLExportLengthTypo(Tunable):
