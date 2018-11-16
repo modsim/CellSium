@@ -241,27 +241,21 @@ class TrackMateXML(Output):
         for cell in world.cells:
             spot = ET.SubElement(group, 'Spot')
 
-            history = tuple(cell.lineage_history[::-1])
-
+            # history = tuple(cell.lineage_history[::-1])
             # this will probably not work if more than one division is between xml-write intervals
-            if history == (0,):
-                self.tracks[cell] = add_track()
-            else:
-                # is it the same cell we already had in an earlier frame?
-                if cell in self.tracks:
-                    connect(self.tracks[cell], old_cell_to_spot[cell], self.cell_to_spot[cell])
-                else:
-                    if cell.parent_id in old_id_to_cell and old_id_to_cell[cell.parent_id] in self.tracks:
-                        connect(
-                            self.tracks[old_id_to_cell[cell.parent_id]],
-                            old_cell_to_spot[old_id_to_cell[cell.parent_id]],
-                            self.cell_to_spot[cell]
-                        )
-                        self.tracks[cell] = self.tracks[old_id_to_cell[cell.parent_id]]
 
-            # current simple workaround: if we could not find the right origin, we create a new one
-            if cell not in self.tracks:
-                self.tracks[cell] = add_track()
+            if cell in self.tracks:
+                connect(self.tracks[cell], old_cell_to_spot[cell], self.cell_to_spot[cell])
+            else:
+                if cell.parent_id in old_id_to_cell and old_id_to_cell[cell.parent_id] in self.tracks:
+                    connect(
+                        self.tracks[old_id_to_cell[cell.parent_id]],
+                        old_cell_to_spot[old_id_to_cell[cell.parent_id]],
+                        self.cell_to_spot[cell]
+                    )
+                    self.tracks[cell] = self.tracks[old_id_to_cell[cell.parent_id]]
+                else:
+                    self.tracks[cell] = add_track()
 
             spot.attrib['ID'] = str(self.cell_to_spot[cell])
             spot.attrib['name'] = str(self.cell_to_spot[cell])
