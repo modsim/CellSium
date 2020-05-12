@@ -104,7 +104,7 @@ def scale_points_relative(points, scale_points=1.0):
         return points
 
     ma, mi = points.max(axis=0), points.min(axis=0)
-    shift = mi - (ma - mi) * 0.5
+    shift = mi + (ma - mi) * 0.5
     points = (scale_points * (points - shift)) + shift
     return points
 
