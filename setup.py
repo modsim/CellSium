@@ -28,6 +28,8 @@ setup(
         'tqdm',
         'pymunk',
         'opencv',
+        'tifffile',
+        'roifile',
         'numpy-stl',
         'ezdxf'
     ],

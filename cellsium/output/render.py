@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 
 from matplotlib import pyplot
-from imagej_tiff_meta import TiffWriter
+from tifffile import TiffWriter
+from roifile import ImagejRoi
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 
@@ -487,6 +488,7 @@ class TiffOutput(Output):
         self.images = []
         self.current = -1
         self.writer = None
+        self.rois = []
 
     def output(self, world, **kwargs):
         return [c.output(world) for c in self.channels]
@@ -509,13 +511,19 @@ class TiffOutput(Output):
 
         result = result.astype(self.output_type)
 
-        self.writer.save(result)
+        print(result.shape)
+
+        binary_rois = [ImagejRoi.frompoints(**roi).tobytes() for roi in self.rois]
+
+        self.writer.save(result,
+                         resolution=(um_to_pixel(1.0), um_to_pixel(1.0)), metadata=dict(unit='um'),
+                         ijmetadata=dict(Overlays=binary_rois))
 
     def write(self, world, file_name, **kwargs):
         if not file_name.endswith('.tif'):
             file_name += '.tif'
         if self.writer is None:
-            self.writer = TiffWriter(file_name)
+            self.writer = TiffWriter(file_name, imagej=True)
 
         self.current += 1
 
@@ -529,5 +537,7 @@ class TiffOutput(Output):
             canvas = stacklet[0]
             points[:, 1] = canvas.shape[0] - points[:, 1]
 
-            for c, _ in enumerate(self.channels):
-                self.writer.add_roi(points, c=c, z=0, t=self.current)
+            if len(self.channels) > 1:
+                self.rois.append(dict(points=points, t=self.current, position=-1))
+            else:
+                self.rois.append(dict(points=points, t=-1, position=self.current))
