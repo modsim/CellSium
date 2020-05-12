@@ -109,6 +109,17 @@ def scale_points_relative(points, scale_points=1.0):
     return points
 
 
+def scale_points_absolute(points, delta=0.0):
+    if delta == 0.0:
+        return points
+
+    ma, mi = points.max(axis=0), points.min(axis=0)
+    shift = mi + (ma - mi) * 0.5
+    scale_points = (ma - mi + delta) / (ma - mi)
+    points = (scale_points * (points - shift)) + shift
+    return points
+
+
 def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
@@ -477,6 +488,14 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
         return canvas
 
 
+class RoiOutputScaleFactor(Tunable):
+    default = 1.0
+
+
+class RoiOutputScaleDelta(Tunable):
+    default = -4.0
+
+
 class TiffOutput(Output):
 
     # channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
@@ -511,8 +530,6 @@ class TiffOutput(Output):
 
         result = result.astype(self.output_type)
 
-        print(result.shape)
-
         binary_rois = [ImagejRoi.frompoints(**roi).tobytes() for roi in self.rois]
 
         self.writer.save(result,
@@ -536,6 +553,11 @@ class TiffOutput(Output):
             # flip y, to have (0,0) bottom left
             canvas = stacklet[0]
             points[:, 1] = canvas.shape[0] - points[:, 1]
+
+            if RoiOutputScaleFactor.value != 1.0:
+                points = scale_points_relative(points, scale_points=RoiOutputScaleFactor.value)
+            if RoiOutputScaleDelta.value != 0.0:
+                points = scale_points_absolute(points, delta=RoiOutputScaleDelta.value)
 
             if len(self.channels) > 1:
                 self.rois.append(dict(points=points, t=self.current, position=-1))
