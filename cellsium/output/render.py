@@ -9,7 +9,6 @@ from matplotlib.patches import PathPatch
 
 from . import Output
 from ..random import RRF, enforce_bounds
-from scipy.misc import bytescale
 from scipy.ndimage.interpolation import rotate
 from scipy.interpolate import interp1d
 from tunable import Tunable
@@ -18,6 +17,14 @@ from ..parameters import Width, Height, Calibration, pixel_to_um, um_to_pixel
 from .plot import MicrometerPerCm
 
 from ..model import WithFluorescence
+
+
+def bytescale(image):
+    if image.dtype == np.uint8:
+        return image
+
+    low, high = image.min(), image.max()
+    return (255 * ((image - low) / (high - low))).astype(np.uint8)
 
 
 def noise_attempt(times=5, m=10, n=512, r=None):
