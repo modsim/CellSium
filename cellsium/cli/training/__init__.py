@@ -39,7 +39,9 @@ def generate_training_data(cells=32, size=(128, 128), return_world=False, return
     simulator.sub_simulators += [ps]
 
     for _ in range(next(ccf)):
-        simulator.add(new_cell(cpg, Cell))
+        cell = new_cell(cpg, Cell)
+        cell.birth()
+        simulator.add(cell)
 
     simulator.step(60.0)
 
@@ -64,6 +66,18 @@ class TrainingDataCount(Tunable):
     default = 16
 
 
+class TrainingCellCount(Tunable):
+    default = 32
+
+
+class TrainingImageWidth(Tunable):
+    default = 128
+
+
+class TrainingImageHeight(Tunable):
+    default = 128
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output-file', dest='output', default=None)
@@ -71,61 +85,20 @@ def main():
     args = parser.parse_args()
     init()
 
-    generate_training_data()
+    gtd_kwargs = dict(
+        cells=TrainingCellCount.value,
+        size=(TrainingImageHeight.value, TrainingImageWidth.value)
+    )
 
-    if args.output:
-        TiffOutput.channels = [NoisyUnevenIlluminationPhaseContrast]
+    generate_training_data(**gtd_kwargs)
 
-        to = TiffOutput()
-        for _ in tqdm.tqdm(range(TrainingDataCount.value)):
-            world = generate_training_data(return_only_world=True)
-            to.write(world, args.output)
+    if not args.output:
+        raise RuntimeError("Output must be set")
 
-        print("Done")
-        raise SystemExit
+    TiffOutput.channels = [NoisyUnevenIlluminationPhaseContrast]
 
-    show = False
-
-    from time import time
-
-    pyplot = fig = ax = aximg = None
-    before = after = counter = 0
-
-    if show:
-
-        from matplotlib import pyplot
-
-        fig = pyplot.figure()
-
-        ax = fig.add_axes([0, 0, 1, 1])
-
-        aximg = None
-
-    else:
-        print("Processing")
-        before = time()
-        counter = 0
-
-    try:
-
-        while True:
-            image, gt = generate_training_data()
-
-            if not show:
-                counter += 1
-            else:
-
-                image = np.r_[image, (gt*255).astype(np.uint8)]
-
-                if aximg is None:
-                    aximg = ax.imshow(image, cmap='gray')
-                else:
-                    aximg.set_data(image)
-
-                fig.canvas.draw()
-
-                pyplot.waitforbuttonpress()
-
-    except KeyboardInterrupt:
-        after = time()
-        print("Did %d steps in %.2fs, i.e. %.2fs per step" % (counter, (after-before), (after-before)/counter))
+    to = TiffOutput()
+    for _ in tqdm.tqdm(range(TrainingDataCount.value)):
+        world = generate_training_data(**gtd_kwargs,
+                                       return_only_world=True)
+        to.write(world, args.output)
