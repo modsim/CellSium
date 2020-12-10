@@ -60,6 +60,41 @@ class RodShaped(Shape):
             yield radius, (x, 0)
 
 
+class Rectangle(Shape):
+
+    @staticmethod
+    def defaults():
+        return dict(length=2.0, width=1.0)
+
+    def raw_points(self, simplify=False):
+        half_width, half_length = self.width / 2.0, self.length / 2.0
+
+        return np.r_[
+            line([+half_length, +half_width], [-half_length, +half_width], times=None if not simplify else 3),
+            line([-half_length, +half_width], [-half_length, -half_width], times=None if not simplify else 3),
+            line([-half_length, -half_width], [+half_length, -half_width], times=None if not simplify else 3),
+            line([+half_length, -half_width], [+half_length, +half_width], times=None if not simplify else 3),
+        ]
+
+    def get_approximation_circles(self):
+        # not properly implemented
+        diameter = self.width
+        radius = diameter / 2.0
+        length = self.length - diameter
+        half_length = length / 2.0
+
+        times = 2*int(length / radius)
+
+        for x in np.linspace(-half_length, half_length, times):
+            yield radius, (x, 0)
+
+
+class Square(Rectangle):
+    def raw_points(self, simplify=False):
+        self.width = self.length
+        return super(Square, self).raw_points(simplify=simplify)
+
+
 class BentRod(RodShaped):
 
     @staticmethod
