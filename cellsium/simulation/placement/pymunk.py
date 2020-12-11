@@ -2,8 +2,11 @@ from tunable import Tunable
 from .base import PlacementSimulation, PlacementSimulationSimplification
 import numpy as np
 
-import pymunkoptions
-pymunkoptions.options['debug'] = False
+try:
+    import pymunkoptions
+    pymunkoptions.options['debug'] = False
+except ImportError:
+    pass  # PyMunk 6.0.0 has removed pymunkoptions
 # noinspection PyPep8
 import pymunk
 
@@ -42,7 +45,7 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
 
     def add(self, cell):
         body = pymunk.Body(1.0, 1.0)
-        body.position = pymunk.Vec2d((cell.position[0], cell.position[1]))
+        body.position = pymunk.Vec2d(cell.position[0], cell.position[1])
         body.angle = cell.angle
 
         if PlacementSimulationSimplification.value == 2:
@@ -53,7 +56,7 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
         else:
             points = cell.raw_points(simplify=PlacementSimulationSimplification.value == 1)
 
-            poly = pymunk.Poly(body, points)
+            poly = pymunk.Poly(body, points.tolist())
             poly.unsafe_set_radius(ChipmunkPlacementRadius.value)
 
             shapes = (poly,)
