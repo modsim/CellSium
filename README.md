@@ -4,8 +4,10 @@ CellSium - *Cell* *Si*mulator for *micro*fluidic *m*icrocolonies
 
 This software is currently in development. Install process:
 
-- `conda env create -f .environment.yaml -n cellsium`
-- `conda activate cellsium`  
+- `conda build recipe`
+- `conda create -n cellsium`
+- `conda activate cellsium`
+- `conda install -c local cellsium`
 
 
 ```

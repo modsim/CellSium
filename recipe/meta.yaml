@@ -1,0 +1,56 @@
+{% set name = "cellsium" %}
+{% set version = "0.0.1.dev1" %}
+{% set sha256 = "" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  # fn: {{ name }}-{{ version }}.tar.gz
+  # url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  # sha256: {{ sha256 }}
+  path: ..
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-cache-dir -vvv
+  noarch: python
+
+requirements:
+  build:
+    - python >=3.7
+    - pip
+  run:
+    - python >=3.7
+    - numpy
+    - scipy
+    - matplotlib
+    - pymunk >=6.0.0
+    - pybox2d >=2.3.10
+    - jsonpickle
+    - tqdm
+    - roifile
+    - tifffile
+    - tunable
+    - numpy-stl
+    - ezdxf
+    - opencv
+
+test:
+  imports:
+    - cellsium
+
+about:
+  home: https://github.com/modsim/cellsium
+  license: BSD-2-Clause
+  license_family: BSD
+  summary: 'CellSium'
+  description: |
+    CellSium – Cell Simulator for microfluidic microcolonies
+  doc_url: https://github.com/modsim/cellsium
+  dev_url: https://github.com/modsim/cellsium
+
+extra:
+  recipe-maintainers:
+    - csachs
