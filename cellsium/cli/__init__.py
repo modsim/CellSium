@@ -3,8 +3,11 @@ from ..random import RRF
 from ..parameters import Seed
 
 
-def init():
-    RRF.seed(Seed.value)
+def set_seed(seed=None):
+    if seed is None:
+        seed = Seed.value
+    RRF.seed(seed)
+    return seed
 
 
 # class Cell(PlacedCell, TimerCell):

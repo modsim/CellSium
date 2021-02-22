@@ -3,7 +3,7 @@ import jsonpickle
 
 from tunable import Tunable, TunableSelectable
 
-from .. import init
+from .. import set_seed
 from ...output.all import *
 
 
@@ -17,7 +17,7 @@ def main():
 
     args = parser.parse_args()
 
-    init()
+    set_seed()
 
     output = Output()
 
