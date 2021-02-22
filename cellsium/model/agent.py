@@ -43,7 +43,6 @@ def next_cell_id():
 
 
 class WithLineage(object):
-
     def copy(self):
         copy = super(WithLineage, self).copy()
         copy.next_cell_id()

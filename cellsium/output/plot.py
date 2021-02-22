@@ -1,7 +1,8 @@
-from ..parameters import Width, Height
-from . import Output
-from tunable import Tunable
 from matplotlib import pyplot
+from tunable import Tunable
+
+from ..parameters import Height, Width
+from . import Output
 
 
 class MicrometerPerCm(Tunable):
@@ -17,7 +18,10 @@ class PlotRenderer(Output, Output.Default):
     def output(self, world, **kwargs):
         if self.fig is None:
             self.fig = pyplot.figure(
-                figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
+                figsize=(
+                    Width.value / MicrometerPerCm.value / 2.51,
+                    Height.value / MicrometerPerCm.value / 2.51,
+                )
             )
 
         fig = self.fig

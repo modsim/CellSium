@@ -1,8 +1,8 @@
-from .base import PlacementSimulation, PlacementSimulationSimplification
-
-import numpy as np
 # noinspection PyPep8Naming
 import Box2D as B2D
+import numpy as np
+
+from .base import PlacementSimulation, PlacementSimulationSimplification
 
 
 class Box2D(PlacementSimulation):
@@ -39,13 +39,15 @@ class Box2D(PlacementSimulation):
             ]
         else:
             shapes = [
-                B2D.b2PolygonShape(vertices=cell.raw_points(simplify=PlacementSimulationSimplification.value == 1))
+                B2D.b2PolygonShape(
+                    vertices=cell.raw_points(
+                        simplify=PlacementSimulationSimplification.value == 1
+                    )
+                )
             ]
 
         body = self.world.CreateDynamicBody(
-            position=cell.position,
-            angle=cell.angle,
-            shapes=shapes
+            position=cell.position, angle=cell.angle, shapes=shapes
         )
 
         self.cell_bodies[cell] = body
@@ -61,7 +63,9 @@ class Box2D(PlacementSimulation):
 
     def _get_positions(self):
         array = np.zeros((len(self.cell_bodies), 3))
-        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body_: id(body_))):
+        for n, body in enumerate(
+            sorted(self.cell_bodies.values(), key=lambda body_: id(body_))
+        ):
             array[n, :] = body.position[0], body.position[1], body.angle
         return array
 

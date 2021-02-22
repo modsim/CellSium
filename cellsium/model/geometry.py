@@ -1,4 +1,5 @@
 from math import cos, sin
+
 import numpy as np
 
 from ..geometry import *
@@ -22,7 +23,6 @@ class Shape3D(Shape):
 
 
 class RodShaped(Shape):
-
     @staticmethod
     def defaults():
         return dict(length=2.0, width=1.0)
@@ -33,13 +33,23 @@ class RodShaped(Shape):
         length = self.length - diameter
         half_length = length / 2.0
 
-        upper = line([half_length, radius], [-half_length, radius], times=None if not simplify else 3)
-        lower = line([-half_length, -radius], [half_length, -radius], times=None if not simplify else 3)
+        upper = line(
+            [half_length, radius],
+            [-half_length, radius],
+            times=None if not simplify else 3,
+        )
+        lower = line(
+            [-half_length, -radius],
+            [half_length, -radius],
+            times=None if not simplify else 3,
+        )
 
         circle_left = circle_segment(radius, 90, 270, times=None if not simplify else 5)
         circle_left[:, 0] -= half_length
 
-        circle_right = circle_segment(radius, -90, 90, times=None if not simplify else 5)
+        circle_right = circle_segment(
+            radius, -90, 90, times=None if not simplify else 5
+        )
         circle_right[:, 0] += half_length
 
         return lower, circle_right, upper, circle_left
@@ -54,14 +64,13 @@ class RodShaped(Shape):
         length = self.length - diameter
         half_length = length / 2.0
 
-        times = 2*int(length / radius)
+        times = 2 * int(length / radius)
 
         for x in np.linspace(-half_length, half_length, times):
             yield radius, (x, 0)
 
 
 class Rectangle(Shape):
-
     @staticmethod
     def defaults():
         return dict(length=2.0, width=1.0)
@@ -70,10 +79,26 @@ class Rectangle(Shape):
         half_width, half_length = self.width / 2.0, self.length / 2.0
 
         return np.r_[
-            line([+half_length, +half_width], [-half_length, +half_width], times=None if not simplify else 3),
-            line([-half_length, +half_width], [-half_length, -half_width], times=None if not simplify else 3),
-            line([-half_length, -half_width], [+half_length, -half_width], times=None if not simplify else 3),
-            line([+half_length, -half_width], [+half_length, +half_width], times=None if not simplify else 3),
+            line(
+                [+half_length, +half_width],
+                [-half_length, +half_width],
+                times=None if not simplify else 3,
+            ),
+            line(
+                [-half_length, +half_width],
+                [-half_length, -half_width],
+                times=None if not simplify else 3,
+            ),
+            line(
+                [-half_length, -half_width],
+                [+half_length, -half_width],
+                times=None if not simplify else 3,
+            ),
+            line(
+                [+half_length, -half_width],
+                [+half_length, +half_width],
+                times=None if not simplify else 3,
+            ),
         ]
 
     def get_approximation_circles(self):
@@ -83,7 +108,7 @@ class Rectangle(Shape):
         length = self.length - diameter
         half_length = length / 2.0
 
-        times = 2*int(length / radius)
+        times = 2 * int(length / radius)
 
         for x in np.linspace(-half_length, half_length, times):
             yield radius, (x, 0)
@@ -96,7 +121,6 @@ class Square(Rectangle):
 
 
 class BentRod(RodShaped):
-
     @staticmethod
     def defaults():
         return dict(bend_overall=0.0, bend_upper=0.0, bend_lower=0.0)
@@ -144,7 +168,6 @@ class BentRod(RodShaped):
 
 
 class Coccoid(Shape):
-
     @staticmethod
     def defaults():
         return dict(length=1.0)
@@ -153,13 +176,14 @@ class Coccoid(Shape):
         radius = self.length / 2
 
         circle_left = circle_segment(radius, 90, 270, times=None if not simplify else 5)
-        circle_right = circle_segment(radius, -90, 90, times=None if not simplify else 5)
+        circle_right = circle_segment(
+            radius, -90, 90, times=None if not simplify else 5
+        )
 
         return np.r_[circle_right, circle_left]
 
 
 class Ellipsoid(Coccoid):
-
     @staticmethod
     def defaults():
         return dict(length=2.0, width=1.0)
@@ -170,20 +194,18 @@ class Ellipsoid(Coccoid):
         a = self.length / 2
         b = self.width / 2
 
-        points[:, 1] *= (b/a)
+        points[:, 1] *= b / a
 
         return points
 
 
 class WithPosition(object):
-
     @staticmethod
     def defaults():
         return dict(position=lambda: [0.0, 0.0])
 
 
 class WithAngle(object):
-
     @staticmethod
     def defaults():
         return dict(angle=0.0)
@@ -204,11 +226,10 @@ class WithProperDivisionBehavior(object):
         x, y = self.position
 
         return [
-            [
-                float(x + factor * cos_a),
-                float(y + factor * sin_a)
-            ]
-            for factor in np.linspace(-self.length / 2 / 2, self.length / 2 / 2, num=count)
+            [float(x + factor * cos_a), float(y + factor * sin_a)]
+            for factor in np.linspace(
+                -self.length / 2 / 2, self.length / 2 / 2, num=count
+            )
         ]
 
 
@@ -223,10 +244,11 @@ class AutoMesh3D(Shape3D):
         return shift(rotate3d(points, self.angle, axis_vector), position3d), triangles
 
     def raw_points3d(self, steps=16, simplify=False):
-        return rotate_and_mesh(add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps)
+        return rotate_and_mesh(
+            add_empty_third_dimension(self.raw_points(simplify=simplify)), steps=steps
+        )
 
 
 class CellGeometry(WithAngle, WithPosition, AutoMesh3D):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)
-

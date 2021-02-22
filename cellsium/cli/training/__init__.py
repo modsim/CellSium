@@ -1,10 +1,8 @@
 import tqdm
+from tunable import Tunable, TunableManager
 
 from ...parameters import pixel_to_um
-
 from ..cli import *
-
-from tunable import TunableManager, Tunable
 
 tqdm.tqdm.monitor_interval = 0
 
@@ -35,11 +33,14 @@ def main():
 
     cell_count = TrainingCellCount.value
 
-    TunableManager.load({
-        'Width': pixel_to_um(shape[1]),
-        'Height': pixel_to_um(shape[0]),
-        'NewCellRadiusFromCenter': 1
-    }, reset=False)
+    TunableManager.load(
+        {
+            'Width': pixel_to_um(shape[1]),
+            'Height': pixel_to_um(shape[0]),
+            'NewCellRadiusFromCenter': 1,
+        },
+        reset=False,
+    )
 
     ccf = RRF.new(np.random.randint, 0, cell_count * 2)
 
@@ -59,7 +60,11 @@ def main():
         simulator.step(60.0)
 
         for output in outputs:
-            output_name = generate_output_name(args, output_count=output_count, output=output)
-            output.write(simulator.simulation.world, output_name, overwrite=args.overwrite)
+            output_name = generate_output_name(
+                args, output_count=output_count, output=output
+            )
+            output.write(
+                simulator.simulation.world, output_name, overwrite=args.overwrite
+            )
 
         output_count += 1

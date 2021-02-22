@@ -1,9 +1,11 @@
-from tunable import Tunable
-from .base import PlacementSimulation, PlacementSimulationSimplification
 import numpy as np
+from tunable import Tunable
+
+from .base import PlacementSimulation, PlacementSimulationSimplification
 
 try:
     import pymunkoptions
+
     pymunkoptions.options['debug'] = False
 except ImportError:
     pass  # PyMunk 6.0.0 has removed pymunkoptions
@@ -54,7 +56,9 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
                 for radius, offset in cell.get_approximation_circles()
             )
         else:
-            points = cell.raw_points(simplify=PlacementSimulationSimplification.value == 1)
+            points = cell.raw_points(
+                simplify=PlacementSimulationSimplification.value == 1
+            )
 
             poly = pymunk.Poly(body, points.tolist())
             poly.unsafe_set_radius(ChipmunkPlacementRadius.value)
@@ -78,7 +82,9 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
 
     def _get_positions(self):
         array = np.zeros((len(self.cell_bodies), 3))
-        for n, body in enumerate(sorted(self.cell_bodies.values(), key=lambda body_: id(body_))):
+        for n, body in enumerate(
+            sorted(self.cell_bodies.values(), key=lambda body_: id(body_))
+        ):
             array[n, :] = body.position[0], body.position[1], body.angle
         return array
 
@@ -97,7 +103,9 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
     def step(self, timestep):
         resolution = 0.1 * 10
         times = timestep / resolution
-        last = self.inner_step(time_step=resolution, iterations=int(times), epsilon=1e-12)
+        last = self.inner_step(
+            time_step=resolution, iterations=int(times), epsilon=1e-12
+        )
         _ = last
 
     def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
@@ -125,7 +133,11 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
 
                 after_positions = self._get_positions()[:, :2]
 
-                dist = self._mean_distance(before_positions, after_positions) * time_step * convergence_check_interval
+                dist = (
+                    self._mean_distance(before_positions, after_positions)
+                    * time_step
+                    * convergence_check_interval
+                )
 
                 before_positions[:] = after_positions
 

@@ -3,9 +3,8 @@
 The test module's __main__ contains the main() function to run the doctests.
 """
 
-import sys
 import doctest
-
+import sys
 from types import ModuleType
 
 
@@ -43,7 +42,9 @@ def collect_modules_recursive(start, blacklist=None):
     return list(sorted(collector, key=lambda module: module.__name__))
 
 
-def run_tests_recursively(start_module, blacklist=None, exit_afterwards=True, quiet=False):
+def run_tests_recursively(
+    start_module, blacklist=None, exit_afterwards=True, quiet=False
+):
     """
     Runs doctests recursively.
 
@@ -78,28 +79,23 @@ def main():
 
     """
 
+    import cellsium.cli.cli
     import cellsium.cli.render
     import cellsium.cli.training
-    import cellsium.cli.cli
-
     import cellsium.geometry
-
     import cellsium.model
     import cellsium.model.agent
     import cellsium.model.geometry
-
     import cellsium.output
     import cellsium.output.all
-
-    import cellsium.simulation
-    import cellsium.simulation.simulator
-
-    import cellsium.simulation.placement.base
-    # import cellsium.simulation.placement.pybox2d
-    import cellsium.simulation.placement.pymunk
-
     import cellsium.parameters
     import cellsium.random
+    import cellsium.simulation
+    import cellsium.simulation.placement.base
+
+    # import cellsium.simulation.placement.pybox2d
+    import cellsium.simulation.placement.pymunk
+    import cellsium.simulation.simulator
 
     run_tests_recursively(cellsium)
 

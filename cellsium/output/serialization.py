@@ -1,7 +1,7 @@
-from . import Output
-
-import numpy as np
 import jsonpickle
+import numpy as np
+
+from . import Output
 
 
 class JsonPickleSerializer(Output):
@@ -29,6 +29,7 @@ def type2numpy(value):
 
 # dir(C);val = getattr(C, k);if k.startswith('__') or hasattr(val, '__call__') or hasattr(val, '__next__'):
 
+
 def prepare_numpy_dtype(inner):
     return [(key, type2numpy(value)) for key, value in sorted(inner.items())]
 
@@ -49,4 +50,3 @@ class QuickAndDirtyTableDumper(Output):
 
     def write(self, world, file_name, time=None, **kwargs):
         np.savez(file_name, time=time, cells=self.output(world))
-

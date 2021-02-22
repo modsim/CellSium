@@ -1,11 +1,11 @@
-from ..parameters import h_to_s, s_to_h
-from .agent import *
-from .geometry import *
-
+from math import log
 
 import numpy as np
-from math import log
+
+from ..parameters import h_to_s, s_to_h
 from ..random import RRF
+from .agent import *
+from .geometry import *
 
 
 class PlacedCell(
@@ -16,13 +16,12 @@ class PlacedCell(
     InitializeWithParameters,
     Copyable,
     CellGeometry,
-    BentRod
+    BentRod,
 ):
     pass
 
 
 class SimulatedCell(object):
-
     def birth(self, parent=None, ts=None):
         pass
 

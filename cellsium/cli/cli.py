@@ -1,22 +1,16 @@
-import os
-import sys
 import argparse
 import logging
-
+import os
+import sys
 from time import time
+
 from tunable import TunableSelectable
 
-from ..simulation.placement import PlacementSimulation
-
-from ..simulation.simulator import Simulator
-
 from ..output.all import *
-
 from ..parameters import CellParameterGenerator, NewCellCount, h_to_s, s_to_h
-
-from . import Cell, set_seed
-
-from . import new_cell
+from ..simulation.placement import PlacementSimulation
+from ..simulation.simulator import Simulator
+from . import Cell, new_cell, set_seed
 
 log = logging.getLogger(__name__)
 
@@ -60,17 +54,28 @@ def add_boundaries_from_dxf(file_name, simulator):
 
 
 def parse_arguments_and_init():
-    logging.basicConfig(level=logging.INFO, format="%(asctime)-15s.%(msecs)03d %(name)s %(levelname)s %(message)s",
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)-15s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-o', '--output-file', dest='output', default=None)
-    parser.add_argument('-w', '--overwrite', dest='overwrite', default=False, action='store_true')
-    parser.add_argument('-p', '--prefix', dest='prefix', default=False, action='store_true')
+    parser.add_argument(
+        '-w', '--overwrite', dest='overwrite', default=False, action='store_true'
+    )
+    parser.add_argument(
+        '-p', '--prefix', dest='prefix', default=False, action='store_true'
+    )
     verbose_group = parser.add_mutually_exclusive_group()
-    verbose_group.add_argument('-q', '--quiet', dest='quiet', default=False, action='store_true')
-    verbose_group.add_argument('-v', '--verbose', dest='verbose', default=1, action='count')
+    verbose_group.add_argument(
+        '-q', '--quiet', dest='quiet', default=False, action='store_true'
+    )
+    verbose_group.add_argument(
+        '-v', '--verbose', dest='verbose', default=1, action='count'
+    )
 
     TunableSelectable.setup_and_parse(parser)
 
@@ -120,10 +125,11 @@ def generate_output_name(args, output_count=0, output=None):
     if args.prefix and output:
         output_name = os.path.join(
             os.path.dirname(output_name),
-            output.__class__.__name__ + '-' + os.path.basename(output_name)
+            output.__class__.__name__ + '-' + os.path.basename(output_name),
         )
 
     return output_name
+
 
 def main():
     args = parse_arguments_and_init()
@@ -155,7 +161,10 @@ def main():
 
     interrupted = False
     try:
-        while simulation_time < h_to_s(SimulationDuration.value) or SimulationDuration.value < 0:
+        while (
+            simulation_time < h_to_s(SimulationDuration.value)
+            or SimulationDuration.value < 0
+        ):
             before = time()
 
             simulator.step(time_step)
@@ -163,25 +172,42 @@ def main():
             simulation_time += time_step
             after = time()
 
-            log.info("Timestep took %.2fs, virtual time: %.2f h" % (after - before, s_to_h(simulation_time)))
+            log.info(
+                "Timestep took %.2fs, virtual time: %.2f h"
+                % (after - before, s_to_h(simulation_time))
+            )
 
             if SimulationOutputInterval.value > 0:
-                if (simulation_time - last_output) >= h_to_s(SimulationOutputInterval.value):
+                if (simulation_time - last_output) >= h_to_s(
+                    SimulationOutputInterval.value
+                ):
                     last_output = simulation_time
 
-                    log.debug("Outputting simulation state at %.2f h" % (s_to_h(simulation_time),))
+                    log.debug(
+                        "Outputting simulation state at %.2f h"
+                        % (s_to_h(simulation_time),)
+                    )
 
                     for output in outputs:
                         output_before = time()
                         if args.output:
-                            output_name = generate_output_name(args, output_count=output_count, output=output)
-                            output.write(simulator.simulation.world, output_name, time=simulation_time,
-                                         overwrite=args.overwrite)
+                            output_name = generate_output_name(
+                                args, output_count=output_count, output=output
+                            )
+                            output.write(
+                                simulator.simulation.world,
+                                output_name,
+                                time=simulation_time,
+                                overwrite=args.overwrite,
+                            )
                         else:
                             output.display(simulator.simulation.world)
                         output_after = time()
 
-                        log.debug("Output %s took %.2fs" % (output.__class__.__name__, output_after - output_before))
+                        log.debug(
+                            "Output %s took %.2fs"
+                            % (output.__class__.__name__, output_after - output_before)
+                        )
 
                     output_count += 1
     except KeyboardInterrupt:
@@ -189,4 +215,7 @@ def main():
         interrupted = True
 
     total_after = time()
-    log.info("%s simulation took %.2fs" % (("Whole" if not interrupted else "Interrupted"), total_after - total_before))
+    log.info(
+        "%s simulation took %.2fs"
+        % (("Whole" if not interrupted else "Interrupted"), total_after - total_before)
+    )

@@ -1,10 +1,10 @@
-from ..parameters import Width, Height
-from . import Output
-from tunable import Tunable
-
-
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
+
+from tunable import Tunable
+
+from ..parameters import Height, Width
+from . import Output
 
 
 class MicrometerPerCm(Tunable):
@@ -66,4 +66,3 @@ class SvgRenderer(Output):
 
     def display(self, world, **kwargs):
         raise RuntimeError('Unsupported')
-

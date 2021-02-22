@@ -1,9 +1,8 @@
-from . import Output
+import numpy as np
+from stl import mesh
 from tunable import Tunable
 
-import numpy as np
-
-from stl import mesh
+from . import Output
 
 
 class MeshCellScaleFactor(Tunable):
@@ -54,7 +53,9 @@ class MeshOutput(Output):
 
             stl_meshes.append(data)
 
-        result_mesh = mesh.Mesh(np.concatenate([single_mesh.data for single_mesh in stl_meshes]))
+        result_mesh = mesh.Mesh(
+            np.concatenate([single_mesh.data for single_mesh in stl_meshes])
+        )
         result_mesh.save(file_name)
 
     def display(self, world, **kwargs):

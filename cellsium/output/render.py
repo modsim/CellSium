@@ -1,23 +1,19 @@
 import cv2
 import numpy as np
-
 from matplotlib import pyplot
-from tifffile import TiffWriter
-from roifile import ImagejRoi
-from matplotlib.path import Path
 from matplotlib.patches import PathPatch
-
-
-from . import Output
-from ..random import RRF
-from scipy.ndimage.interpolation import rotate
+from matplotlib.path import Path
+from roifile import ImagejRoi
 from scipy.interpolate import interp1d
+from scipy.ndimage.interpolation import rotate
+from tifffile import TiffWriter
 from tunable import Tunable
-from ..parameters import Width, Height, um_to_pixel
-
-from .plot import MicrometerPerCm
 
 from ..model import WithFluorescence
+from ..parameters import Height, Width, um_to_pixel
+from ..random import RRF
+from . import Output
+from .plot import MicrometerPerCm
 
 
 def bytescale(image):
@@ -31,7 +27,11 @@ def bytescale(image):
 def noise_attempt(times=5, m=10, n=512, r=None):
     # noinspection PyShadowingNames
     def make_rand(n, r):
-        return interp1d(np.linspace(0, n, num=n), np.array([next(r) for _ in range(n)]), kind='cubic')
+        return interp1d(
+            np.linspace(0, n, num=n),
+            np.array([next(r) for _ in range(n)]),
+            kind='cubic',
+        )
 
     # noinspection PyShadowingNames
     def make_square(array):
@@ -41,16 +41,16 @@ def noise_attempt(times=5, m=10, n=512, r=None):
     def make_it(n, m, r):
         return make_square(make_rand(m, r)(np.linspace(0, m, n)))
 
-    two_n = 2*n
+    two_n = 2 * n
 
     the_sum = make_it(two_n, m, r)
 
     for _ in range(times):
-        the_sum += rotate(make_it(two_n, m, r), angle=360.0*next(r), reshape=False)
+        the_sum += rotate(make_it(two_n, m, r), angle=360.0 * next(r), reshape=False)
 
     the_sum /= times
 
-    the_sum = the_sum[n//2:two_n-n//2, n//2:two_n-n//2]
+    the_sum = the_sum[n // 2 : two_n - n // 2, n // 2 : two_n - n // 2]
     return the_sum
 
 
@@ -128,7 +128,9 @@ def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0, **kwargs):
     return canvas
 
 
-def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_sample=1):
+def render_on_canvas_matplotlib(
+    canvas, array_of_points, scale_points=1.0, over_sample=1
+):
     interaction_state = pyplot.isinteractive()
 
     pyplot.ioff()
@@ -137,14 +139,23 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
     fig = pyplot.figure(
         frameon=False,
         dpi=int(dpi),
-        figsize=(over_sample * canvas.shape[1] / dpi, over_sample * canvas.shape[0] / dpi)
+        figsize=(
+            over_sample * canvas.shape[1] / dpi,
+            over_sample * canvas.shape[0] / dpi,
+        ),
     )
 
     ax = fig.add_axes([0, 0, 1, 1])
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
         ax.add_patch(
-            prepare_patch(points, edgecolor='black', facecolor='white', closed=True, linewidth=over_sample * 0.25)
+            prepare_patch(
+                points,
+                edgecolor='black',
+                facecolor='white',
+                closed=True,
+                linewidth=over_sample * 0.25,
+            )
         )
 
     plt = ax.imshow(canvas, cmap='gray')
@@ -157,14 +168,20 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
     fig.canvas.draw()
 
     canvas_data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(
-        fig.canvas.get_width_height()[::-1] + (3,))[:, :, 0]
+        fig.canvas.get_width_height()[::-1] + (3,)
+    )[:, :, 0]
     if canvas_data.max() > 0.0:
         canvas_data = canvas_data.astype(np.float32) / canvas_data.max()
 
     pyplot.close(fig.number)
 
     if over_sample != 1:
-        cv2.resize(canvas_data, dst=canvas_data, dsize=canvas.shape[::-1], interpolation=cv2.INTER_AREA)
+        cv2.resize(
+            canvas_data,
+            dst=canvas_data,
+            dsize=canvas.shape[::-1],
+            interpolation=cv2.INTER_AREA,
+        )
 
     if interaction_state:
         pyplot.ion()
@@ -226,7 +243,9 @@ class PlainRenderer(Output):
     def output(self, world, **kwargs):
         canvas = self.new_canvas()
 
-        array_of_points = [get_canvas_points_raw(cell, canvas.shape[0]) for cell in world.cells]
+        array_of_points = [
+            get_canvas_points_raw(cell, canvas.shape[0]) for cell in world.cells
+        ]
 
         canvas = self.render_cells(canvas, array_of_points)
 
@@ -255,7 +274,10 @@ class PlainRenderer(Output):
 
             if getattr(self, 'fig', None) is None:
                 self.fig = pyplot.figure(
-                    figsize=(Width.value / MicrometerPerCm.value / 2.51, Height.value / MicrometerPerCm.value / 2.51)
+                    figsize=(
+                        Width.value / MicrometerPerCm.value / 2.51,
+                        Height.value / MicrometerPerCm.value / 2.51,
+                    )
                 )
 
             if getattr(self, 'ax', None) is None:
@@ -332,7 +354,7 @@ class FluorescenceRenderer(PlainRenderer):
             np.random.normal,
             FluorescenceNoiseMean.value,
             FluorescenceNoiseStd.value,
-            canvas.shape
+            canvas.shape,
         )
 
     def output(self, world, **kwargs):
@@ -340,14 +362,20 @@ class FluorescenceRenderer(PlainRenderer):
 
         int_background = FluorescenceRatioBackground.value
 
-        emitter_size = (FluorescenceEmitterKernelSizeW.value, FluorescenceEmitterKernelSizeH.value)
+        emitter_size = (
+            FluorescenceEmitterKernelSizeW.value,
+            FluorescenceEmitterKernelSizeH.value,
+        )
 
         emitter = np.zeros(emitter_size)
-        emitter[emitter_size[0]//2, emitter_size[1]//2] = 1.0
+        emitter[emitter_size[0] // 2, emitter_size[1] // 2] = 1.0
 
-        emitter = cv2.GaussianBlur(emitter, emitter_size,
-                                   sigmaX=FluorescenceEmitterGaussianW.value,
-                                   sigmaY=FluorescenceEmitterGaussianH.value)
+        emitter = cv2.GaussianBlur(
+            emitter,
+            emitter_size,
+            sigmaX=FluorescenceEmitterGaussianW.value,
+            sigmaY=FluorescenceEmitterGaussianH.value,
+        )
 
         self.debug_output('fluorescence-emitter', emitter)
 
@@ -365,8 +393,9 @@ class FluorescenceRenderer(PlainRenderer):
 
             # Skip cells which (partly) lie outside of the image
             # TODO proper handling, so that parts of cells poking into the image are still properly handled
-            if ((points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]) or
-                    (points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0])):
+            if (points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]) or (
+                points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0]
+            ):
                 continue
 
             if isinstance(cell, WithFluorescence):
@@ -379,22 +408,35 @@ class FluorescenceRenderer(PlainRenderer):
                 brightness = 0
 
             # TODO normalize by µm^2
-            int_countdown = brightness * (cv2.contourArea(pts) / FluorescenceCellSizeFactor.value)
+            int_countdown = brightness * (
+                cv2.contourArea(pts) / FluorescenceCellSizeFactor.value
+            )
 
-            sopou.set_bounds(points[:, 0].min(), points[:, 0].max(), points[:, 1].min(), points[:, 1].max())
+            sopou.set_bounds(
+                points[:, 0].min(),
+                points[:, 0].max(),
+                points[:, 1].min(),
+                points[:, 1].max(),
+            )
 
             while int_countdown > 0:
                 x, y = next(sopou_gen)
 
                 if cv2.pointPolygonTest(pts, (x, y), measureDist=False) > 0.0:
                     target = p_canvas[
-                             int(y)+emitter_size[1]//2:int(y)+3*emitter_size[1]//2,
-                             int(x)+emitter_size[0]//2:int(x)+3*emitter_size[0]//2
-                             ]
-                    target += emitter[:target.shape[0], :target.shape[1]]
+                        int(y)
+                        + emitter_size[1] // 2 : int(y)
+                        + 3 * emitter_size[1] // 2,
+                        int(x)
+                        + emitter_size[0] // 2 : int(x)
+                        + 3 * emitter_size[0] // 2,
+                    ]
+                    target += emitter[: target.shape[0], : target.shape[1]]
                     int_countdown -= 1
 
-        canvas = p_canvas[emitter_size[0]:-emitter_size[0], emitter_size[1]:-emitter_size[1]]
+        canvas = p_canvas[
+            emitter_size[0] : -emitter_size[0], emitter_size[1] : -emitter_size[1]
+        ]
 
         self.debug_output('raw-fluorescence-cells', canvas)
 
@@ -427,13 +469,16 @@ class PhaseContrastRenderer(PlainRenderer):
 
         self.debug_output('pc-blurred-cells', cell_canvas)
 
-        halo_glow_in_cells = 0.4 * gaussian(cell_canvas, 0.1) * gaussian(cell_halo * (1 - cell_canvas), sigma=0.05)
+        halo_glow_in_cells = (
+            0.4
+            * gaussian(cell_canvas, 0.1)
+            * gaussian(cell_halo * (1 - cell_canvas), sigma=0.05)
+        )
 
         self.debug_output('pc-blur-in-cells', halo_glow_in_cells)
 
         result = (
-            background_w_halo * (1 - cell_canvas)
-            + cell_canvas * LuminanceCell.value
+            background_w_halo * (1 - cell_canvas) + cell_canvas * LuminanceCell.value
         ) + halo_glow_in_cells
 
         self.debug_output('pc-unblurred-result', result)
@@ -465,10 +510,8 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def new_uneven_illumination(self):
         empty = self.new_canvas()
         return noise_attempt(
-            times=5,
-            m=10,
-            n=max(empty.shape),
-            r=self.random_complex_noise)[:empty.shape[0], :empty.shape[1]]
+            times=5, m=10, n=max(empty.shape), r=self.random_complex_noise
+        )[: empty.shape[0], : empty.shape[1]]
 
     def create_uneven_illumination(self):
         self.uneven_illumination = self.new_uneven_illumination()
@@ -479,9 +522,13 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         self.debug_output('uneven-illumination', self.uneven_illumination)
 
         canvas = (
-            (canvas * (1.0 + UnevenIlluminationMultiplicativeFactor.value * self.uneven_illumination))
-            + UnevenIlluminationAdditiveFactor.value * self.uneven_illumination
-        )
+            canvas
+            * (
+                1.0
+                + UnevenIlluminationMultiplicativeFactor.value
+                * self.uneven_illumination
+            )
+        ) + UnevenIlluminationAdditiveFactor.value * self.uneven_illumination
 
         self.debug_output('pc-with-uneven-illumination', canvas)
 
@@ -582,15 +629,18 @@ class TiffOutput(Output):
                 result[:, 0, c, :, :] -= result[:, 0, c, :, :].min()
                 result[:, 0, c, :, :] /= result[:, 0, c, :, :].max()
 
-            result *= 2**(8*np.dtype(self.output_type).itemsize) - 1
+            result *= 2 ** (8 * np.dtype(self.output_type).itemsize) - 1
 
         result = result.astype(self.output_type)
 
         binary_rois = [ImagejRoi.frompoints(**roi).tobytes() for roi in self.rois]
 
-        self.writer.save(result,
-                         resolution=(um_to_pixel(1.0), um_to_pixel(1.0)), metadata=dict(unit='um'),
-                         ijmetadata=dict(Overlays=binary_rois))
+        self.writer.save(
+            result,
+            resolution=(um_to_pixel(1.0), um_to_pixel(1.0)),
+            metadata=dict(unit='um'),
+            ijmetadata=dict(Overlays=binary_rois),
+        )
 
     def write(self, world, file_name, **kwargs):
         if not file_name.endswith('.tif'):

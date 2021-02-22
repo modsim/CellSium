@@ -1,10 +1,10 @@
 import argparse
-import jsonpickle
 
+import jsonpickle
 from tunable import Tunable, TunableSelectable
 
-from .. import set_seed
 from ...output.all import *
+from .. import set_seed
 
 
 def main():

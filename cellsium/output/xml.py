@@ -1,7 +1,7 @@
-from ..parameters import Width, Height, Calibration, um_to_pixel
-from . import Output
-
 from tunable import Tunable
+
+from ..parameters import Calibration, Height, Width, um_to_pixel
+from . import Output
 
 
 class TrackMateXMLExportFluorescences(Tunable):
@@ -15,7 +15,6 @@ class TrackMateXMLExportLengthTypo(Tunable):
 
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
-
 
 EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <TrackMate version="2.7.3">
@@ -143,29 +142,35 @@ class TrackMateXML(Output):
         for f in TrackMateXMLExportFluorescences.value.split(','):
             if not f:
                 continue
-            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
-                feature='%s_FLUORESCENCE_MEAN' % f.upper(),
-                name='%s Mean' % f,
-                shortname='%s' % f,
-                dimension='INTENSITY',
-                isint='false'
-            ))
+            ET.SubElement(spot_features, 'Feature').attrib.update(
+                dict(
+                    feature='%s_FLUORESCENCE_MEAN' % f.upper(),
+                    name='%s Mean' % f,
+                    shortname='%s' % f,
+                    dimension='INTENSITY',
+                    isint='false',
+                )
+            )
 
-            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
-                feature='%s_FLUORESCENCE_STDDEV' % f.upper(),
-                name='%s StdDev' % f,
-                shortname='%s SD' % f,
-                dimension='INTENSITY',
-                isint='false'
-            ))
+            ET.SubElement(spot_features, 'Feature').attrib.update(
+                dict(
+                    feature='%s_FLUORESCENCE_STDDEV' % f.upper(),
+                    name='%s StdDev' % f,
+                    shortname='%s SD' % f,
+                    dimension='INTENSITY',
+                    isint='false',
+                )
+            )
 
-            ET.SubElement(spot_features, 'Feature').attrib.update(dict(
-                feature='%s_FLUORESCENCE_TOTAL' % f.upper(),
-                name='%s Total' % f,
-                shortname='%sTot' % f,
-                dimension='INTENSITY',
-                isint='false'
-            ))
+            ET.SubElement(spot_features, 'Feature').attrib.update(
+                dict(
+                    feature='%s_FLUORESCENCE_TOTAL' % f.upper(),
+                    name='%s Total' % f,
+                    shortname='%sTot' % f,
+                    dimension='INTENSITY',
+                    isint='false',
+                )
+            )
 
         if not TrackMateXMLExportLengthTypo.value:
             for feature in spot_features:
@@ -245,13 +250,18 @@ class TrackMateXML(Output):
             # this will probably not work if more than one division is between xml-write intervals
 
             if cell in self.tracks:
-                connect(self.tracks[cell], old_cell_to_spot[cell], self.cell_to_spot[cell])
+                connect(
+                    self.tracks[cell], old_cell_to_spot[cell], self.cell_to_spot[cell]
+                )
             else:
-                if cell.parent_id in old_id_to_cell and old_id_to_cell[cell.parent_id] in self.tracks:
+                if (
+                    cell.parent_id in old_id_to_cell
+                    and old_id_to_cell[cell.parent_id] in self.tracks
+                ):
                     connect(
                         self.tracks[old_id_to_cell[cell.parent_id]],
                         old_cell_to_spot[old_id_to_cell[cell.parent_id]],
-                        self.cell_to_spot[cell]
+                        self.cell_to_spot[cell],
                     )
                     self.tracks[cell] = self.tracks[old_id_to_cell[cell.parent_id]]
                 else:
@@ -281,7 +291,9 @@ class TrackMateXML(Output):
             spot.attrib['PIXELS'] = str(0.0)
 
             spot.attrib['POSITION_X'] = str(um_to_pixel(cell.position[0]))
-            spot.attrib['POSITION_Y'] = str(um_to_pixel(Height.value-cell.position[1]))
+            spot.attrib['POSITION_Y'] = str(
+                um_to_pixel(Height.value - cell.position[1])
+            )
             spot.attrib['POSITION_Z'] = str(0.0)
 
             spot.attrib['FRAME'] = str(frame_counter)

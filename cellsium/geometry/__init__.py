@@ -31,8 +31,7 @@ def parabolic_deformation(array, factor):
 
 
 def get_rotation_matrix(angle):
-    return np.array([[np.cos(angle), -np.sin(angle)],
-                     [np.sin(angle),  np.cos(angle)]])
+    return np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
 
 
 def rotate(data, angle):
@@ -63,11 +62,7 @@ def rotate3d(data, angle, axis_vector):
 def cross_product_matrix(vec):
     vec = np.atleast_2d(vec)[:, 0]
 
-    return np.array([
-        [0, -vec[2], vec[1]],
-        [vec[2], 0, -vec[0]],
-        [-vec[1], vec[0], 0]
-    ])
+    return np.array([[0, -vec[2], vec[1]], [vec[2], 0, -vec[0]], [-vec[1], vec[0], 0]])
 
 
 # for Py3 this could be lru cache decorated, as the step-sizes of the angles
@@ -75,9 +70,11 @@ def cross_product_matrix(vec):
 def get_rotation_matrix3d_angle_axis(angle, axis_vector):
     cos_a, sin_a = np.cos(angle), np.sin(angle)
 
-    r = cos_a * np.eye(3) + \
-        sin_a*cross_product_matrix(axis_vector) + \
-        (1-cos_a)*np.tensordot(axis_vector, axis_vector, axes=0).reshape((3, 3))
+    r = (
+        cos_a * np.eye(3)
+        + sin_a * cross_product_matrix(axis_vector)
+        + (1 - cos_a) * np.tensordot(axis_vector, axis_vector, axes=0).reshape((3, 3))
+    )
 
     return r
 
@@ -99,7 +96,9 @@ def rotate_and_mesh(points, steps=16, clean=True, close_ends=True):
         points = points[points[:, 1] > eps]
 
     if close_ends:
-        points = np.r_[[[points[0, 0] + eps, 0, 0]], points, [[points[-1, 0] - eps, 0, 0]]]
+        points = np.r_[
+            [[points[0, 0] + eps, 0, 0]], points, [[points[-1, 0] - eps, 0, 0]]
+        ]
 
     all_points = points.repeat(steps, axis=0)
 
@@ -107,9 +106,12 @@ def rotate_and_mesh(points, steps=16, clean=True, close_ends=True):
     max_angle = np.radians(360.0 if clean else 180.0)
 
     for n, (angle, idx) in enumerate(
-            zip(np.linspace(0, max_angle, num=steps), range(0, len(points) * steps, len(points)))
+        zip(
+            np.linspace(0, max_angle, num=steps),
+            range(0, len(points) * steps, len(points)),
+        )
     ):
-        all_points[idx:idx+len(points)] = rotate3d(points, angle, axis_vector)
+        all_points[idx : idx + len(points)] = rotate3d(points, angle, axis_vector)
 
     # Triangle connectivity
     #
@@ -127,12 +129,14 @@ def rotate_and_mesh(points, steps=16, clean=True, close_ends=True):
     for step in range(steps):
         base = step * len(points)
         for n in range(0, len(points) - 1):
-            triangles.append([
-                last + n + 0, base + n + 1, last + n + 1,
-            ])
-            triangles.append([
-                base + n + 0, base + n + 1, last + n
-            ])
+            triangles.append(
+                [
+                    last + n + 0,
+                    base + n + 1,
+                    last + n + 1,
+                ]
+            )
+            triangles.append([base + n + 0, base + n + 1, last + n])
         last = base
 
     return all_points, np.array(triangles)

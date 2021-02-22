@@ -1,6 +1,6 @@
 from ..model import *
-from ..random import RRF
 from ..parameters import Seed
+from ..random import RRF
 
 
 def set_seed(seed=None):
@@ -12,6 +12,7 @@ def set_seed(seed=None):
 
 # class Cell(PlacedCell, TimerCell):
 #     pass
+
 
 class Cell(PlacedCell, SizerCell):
     pass
@@ -31,5 +32,5 @@ def new_cell(cpg, cell_type):
         width=width,
         bend_overall=next(cpg.bend_overall),
         bend_upper=next(cpg.bend_upper),
-        bend_lower=next(cpg.bend_lower)
+        bend_lower=next(cpg.bend_lower),
     )

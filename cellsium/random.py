@@ -1,9 +1,11 @@
-import numpy as np
 import binascii
+
+import numpy as np
 
 
 class RRF(object):
     """ Reproducible random function """
+
     seed_state = np.random.get_state()
 
     @classmethod

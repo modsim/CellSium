@@ -1,20 +1,38 @@
 import json
-from pathlib import Path
-from datetime import datetime
 from collections import namedtuple
+from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
-
 from tunable import Tunable
 
 from . import Output
-from .render import RenderChannels, new_canvas, get_canvas_points_for_cell, PlainRenderer
+from .render import (
+    PlainRenderer,
+    RenderChannels,
+    get_canvas_points_for_cell,
+    new_canvas,
+)
 
-
-BBoxContour = namedtuple('BBoxContour', ['points', 'x_min', 'x_max', 'y_min', 'y_max', 'x_delta', 'y_delta',
-                                         'x_center', 'y_center', 'rel_x_delta', 'rel_y_delta', 'rel_x_center',
-                                         'rel_y_center'])
+BBoxContour = namedtuple(
+    'BBoxContour',
+    [
+        'points',
+        'x_min',
+        'x_max',
+        'y_min',
+        'y_max',
+        'x_delta',
+        'y_delta',
+        'x_center',
+        'y_center',
+        'rel_x_delta',
+        'rel_y_delta',
+        'rel_x_center',
+        'rel_y_center',
+    ],
+)
 
 
 def get_bbox_for_cell(cell, shape):
@@ -30,23 +48,26 @@ def get_bbox_for_cell(cell, shape):
 
     rel_x_center, rel_y_center = x_center / shape[1], y_center / shape[0]
 
-    return BBoxContour(points=points,
-                       x_min=x_min,
-                       x_max=x_max,
-                       y_min=y_min,
-                       y_max=y_max,
-                       x_delta=x_delta,
-                       y_delta=y_delta,
-                       x_center=x_center,
-                       y_center=y_center,
-                       rel_x_delta=rel_x_delta,
-                       rel_y_delta=rel_y_delta,
-                       rel_x_center=rel_x_center,
-                       rel_y_center=rel_y_center)
+    return BBoxContour(
+        points=points,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+        x_delta=x_delta,
+        y_delta=y_delta,
+        x_center=x_center,
+        y_center=y_center,
+        rel_x_delta=rel_x_delta,
+        rel_y_delta=rel_y_delta,
+        rel_x_center=rel_x_center,
+        rel_y_center=rel_y_center,
+    )
 
 
 class GroundTruthMaskCoordinateResolution(Tunable):
     """ Resolution for ground truth coordinate data (e.g. JSON files). """
+
     default = 0.1
 
 
@@ -59,7 +80,15 @@ class GroundTruthOutput(Output, Output.Virtual):
 
         self.current = -1
 
-        self.significant_digits = int(np.round(np.log((1/GroundTruthMaskCoordinateResolution.value) * max(self.canvas_shape))/np.log(10)))
+        self.significant_digits = int(
+            np.round(
+                np.log(
+                    (1 / GroundTruthMaskCoordinateResolution.value)
+                    * max(self.canvas_shape)
+                )
+                / np.log(10)
+            )
+        )
 
     def output(self, world, **kwargs):
         raise NotImplementedError()
@@ -105,7 +134,15 @@ class YOLOOutput(GroundTruthOutput):
 
             class_ = 0  # only one class at the moment
 
-            line = f'{class_} ' + ' '.join(('%%.%df' % digits) % value for value in [bbox.rel_x_center, bbox.rel_y_center, bbox.rel_x_delta, bbox.rel_y_delta])
+            line = f'{class_} ' + ' '.join(
+                ('%%.%df' % digits) % value
+                for value in [
+                    bbox.rel_x_center,
+                    bbox.rel_y_center,
+                    bbox.rel_x_delta,
+                    bbox.rel_y_delta,
+                ]
+            )
 
             lines.append(line)
 
@@ -118,7 +155,7 @@ def binary_to_rle(mask):
     total = len(mask)
 
     delta = np.diff(mask)
-    lens, = np.where(delta)
+    (lens,) = np.where(delta)
     lens[1:] -= lens[0:-1]
 
     lens[0] += 1  # we lost one with np.diff
@@ -130,6 +167,7 @@ def binary_to_rle(mask):
 
 class COCOEncodeRLE(Tunable):
     """ Whether to encode segmentation data as RLE format. """
+
     default = False
 
 
@@ -144,7 +182,7 @@ class COCOOutput(GroundTruthOutput):
                 'description': "Dataset generated with CellSium",  # TODO: Add parameters?
                 'contributor': "CellSium User",
                 'url': 'https://github.com/modsim/cellsium',
-                'date_created': self.now()
+                'date_created': self.now(),
             },
             'images': [],
             'annotations': [],
@@ -161,7 +199,7 @@ class COCOOutput(GroundTruthOutput):
                     'name': 'cell',
                     'supercategory': 'cell',
                 }
-            ]
+            ],
         }
 
         self.annotation_file = None
@@ -196,7 +234,7 @@ class COCOOutput(GroundTruthOutput):
 
         token = '%012d' % self.current
 
-        image_file_name = (token + '.png')
+        image_file_name = token + '.png'
 
         image_file = image_path / image_file_name
 
@@ -204,16 +242,18 @@ class COCOOutput(GroundTruthOutput):
             channel.write(world, str(image_file))
             break  # only one channel supported
 
-        self.coco_structure['images'].append({
-            'id': self.current,
-            'width': self.canvas_shape[1],
-            'height': self.canvas_shape[0],
-            'file_name': image_file_name,
-            'license': 0,
-            'flickr_url': '',
-            'coco_url': '',
-            'date_captured': self.now(),
-        })
+        self.coco_structure['images'].append(
+            {
+                'id': self.current,
+                'width': self.canvas_shape[1],
+                'height': self.canvas_shape[0],
+                'file_name': image_file_name,
+                'license': 0,
+                'flickr_url': '',
+                'coco_url': '',
+                'date_captured': self.now(),
+            }
+        )
 
         class_ = 0
 
@@ -234,29 +274,30 @@ class COCOOutput(GroundTruthOutput):
 
                 lens = binary_to_rle(mask)
 
-                segmentation = {
-                    'counts': lens.tolist(),
-                    'size': shape
-                }
+                segmentation = {'counts': lens.tolist(), 'size': shape}
 
-            self.coco_structure['annotations'].append({
-                'id': len(self.coco_structure['annotations']),
-                'image_id': self.current,
-                'category_id': class_,
-                'segmentation': segmentation,
-                'area': area,
-                'bbox': [bbox.x_min, bbox.y_min, bbox.x_delta, bbox.y_delta],
-                'iscrowd': iscrowd,
-            })
+            self.coco_structure['annotations'].append(
+                {
+                    'id': len(self.coco_structure['annotations']),
+                    'image_id': self.current,
+                    'category_id': class_,
+                    'segmentation': segmentation,
+                    'area': area,
+                    'bbox': [bbox.x_min, bbox.y_min, bbox.x_delta, bbox.y_delta],
+                    'iscrowd': iscrowd,
+                }
+            )
 
 
 class MaskOutputBinary(Tunable):
     """Whether GenericMaskOutput masks should be binary or continuous"""
+
     value = True
 
 
 class MaskOutputCellValue(Tunable):
     """Value for foreground in GenericMaskOutput masks"""
+
     value = 255
 
 
@@ -301,6 +342,6 @@ class GenericMaskOutput(GroundTruthOutput):
         mask = PlainRenderer.convert(mask, max_value=max_value)
 
         if MaskOutputBinary.value:
-            mask = np.digitize(mask, [0.5*max_value]).astype(np.uint8) * max_value
+            mask = np.digitize(mask, [0.5 * max_value]).astype(np.uint8) * max_value
 
         PlainRenderer.imwrite(mask_file, mask)
