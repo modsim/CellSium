@@ -9,11 +9,11 @@ from matplotlib.patches import PathPatch
 
 
 from . import Output
-from ..random import RRF, enforce_bounds
+from ..random import RRF
 from scipy.ndimage.interpolation import rotate
 from scipy.interpolate import interp1d
 from tunable import Tunable
-from ..parameters import Width, Height, Calibration, pixel_to_um, um_to_pixel
+from ..parameters import Width, Height, um_to_pixel
 
 from .plot import MicrometerPerCm
 
@@ -120,7 +120,7 @@ def scale_points_absolute(points, delta=0.0):
     return points
 
 
-def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0):
+def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0, **kwargs):
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
         cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
@@ -172,6 +172,27 @@ def render_on_canvas_matplotlib(canvas, array_of_points, scale_points=1.0, over_
     return canvas_data
 
 
+def get_canvas_points_raw(cell, image_height=None):
+    points = um_to_pixel(cell.points_on_canvas())
+
+    if image_height:
+        # flip y, to have (0,0) bottom left
+        points[:, 1] = image_height - points[:, 1]
+
+    return points
+
+
+def get_canvas_points_for_cell(cell, image_height=None):
+    points = get_canvas_points_raw(cell, image_height=image_height)
+
+    if RoiOutputScaleFactor.value != 1.0:
+        points = scale_points_relative(points, scale_points=RoiOutputScaleFactor.value)
+    if RoiOutputScaleDelta.value != 0.0:
+        points = scale_points_absolute(points, delta=RoiOutputScaleDelta.value)
+
+    return points
+
+
 class PlainRenderer(Output):
 
     write_debug_output = False
@@ -184,37 +205,41 @@ class PlainRenderer(Output):
     def new_canvas():
         return new_canvas()
 
+    @staticmethod
+    def imwrite(name, img):
+        return cv2.imwrite(str(name), img)
+
     def debug_output(self, name, array):
         if not self.write_debug_output:
             return
 
-        cv2.imwrite('render-%s.png' % (name,), bytescale(array))
+        self.imwrite('render-%s.png' % (name,), bytescale(array))
+
+    @staticmethod
+    def render_cells(canvas, array_of_points, fast=False):
+        if fast:
+            canvas = render_on_canvas_cv2(canvas, array_of_points)
+        else:
+            canvas = render_on_canvas_matplotlib(canvas, array_of_points)
+        return canvas
 
     def output(self, world, **kwargs):
         canvas = self.new_canvas()
 
-        array_of_points = []
+        array_of_points = [get_canvas_points_raw(cell, canvas.shape[0]) for cell in world.cells]
 
-        for cell in world.cells:
-            points = um_to_pixel(cell.points_on_canvas())
-            # flip y, to have (0,0) bottom left
-            points[:, 1] = canvas.shape[0] - points[:, 1]
-
-            array_of_points.append(points)
-
-        # canvas = render_on_canvas_cv2(canvas, array_of_points)
-        canvas = render_on_canvas_matplotlib(canvas, array_of_points)
+        canvas = self.render_cells(canvas, array_of_points)
 
         self.debug_output('raw-cells', canvas)
 
         return canvas
 
     @staticmethod
-    def convert(image):
-        return (np.clip(image, 0, 1) * 255).astype(np.uint8)
+    def convert(image, max_value=255):
+        return (np.clip(image, 0, 1) * max_value).astype(np.uint8)
 
     def write(self, world, file_name, **kwargs):
-        cv2.imwrite(file_name, self.convert(self.output(world)))
+        self.imwrite(file_name, self.convert(self.output(world)))
 
     def display(self, world, **kwargs):
 
@@ -496,14 +521,45 @@ class RoiOutputScaleDelta(Tunable):
     default = -4.0
 
 
-class TiffOutput(Output):
+def collect_subclasses(start):
+    collector = set()
 
-    # channels = [NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer]
-    channels = [NoisyUnevenIlluminationPhaseContrast]
+    def _recurse(class_):
+        collector.add(class_)
+        for subclass_ in class_.__subclasses__():
+            _recurse(subclass_)
+
+    _recurse(start)
+    return collector
+
+
+class RenderChannels(Tunable):
+    default = 'NoisyUnevenIlluminationPhaseContrast'
+    # default = 'NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer'
+
+    @staticmethod
+    def get_mapping():
+        return {class_.__name__: class_ for class_ in collect_subclasses(PlainRenderer)}
+
+    @classmethod
+    def test(cls, value):
+        mapping = cls.get_mapping()
+        for class_ in value.split(','):
+            if class_.strip() not in mapping:
+                return False
+        return True
+
+    @classmethod
+    def instantiate(cls):
+        mapping = cls.get_mapping()
+        return [mapping[class_.strip()]() for class_ in cls.value.split(',')]
+
+
+class TiffOutput(Output):
     output_type = np.uint8
 
     def __init__(self):
-        self.channels = [c() for c in self.channels]
+        self.channels = RenderChannels.instantiate()
         self.images = []
         self.current = -1
         self.writer = None
@@ -549,15 +605,7 @@ class TiffOutput(Output):
         self.images.append(stacklet)
 
         for cell in world.cells:
-            points = um_to_pixel(cell.points_on_canvas())
-            # flip y, to have (0,0) bottom left
-            canvas = stacklet[0]
-            points[:, 1] = canvas.shape[0] - points[:, 1]
-
-            if RoiOutputScaleFactor.value != 1.0:
-                points = scale_points_relative(points, scale_points=RoiOutputScaleFactor.value)
-            if RoiOutputScaleDelta.value != 0.0:
-                points = scale_points_absolute(points, delta=RoiOutputScaleDelta.value)
+            points = get_canvas_points_for_cell(cell, image_height=stacklet[0].shape[0])
 
             if len(self.channels) > 1:
                 self.rois.append(dict(points=points, t=self.current, position=-1))
