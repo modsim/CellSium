@@ -65,6 +65,12 @@ def get_bbox_for_cell(cell, shape):
     )
 
 
+def mkdirs(*args):
+    for arg in args:
+        if arg:
+            arg.mkdir(parents=True, exist_ok=True)
+
+
 class GroundTruthMaskCoordinateResolution(Tunable):
     """ Resolution for ground truth coordinate data (e.g. JSON files). """
 
@@ -111,12 +117,9 @@ class YOLOOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            base_path.mkdir(parents=True, exist_ok=True)
+            mkdirs(base_path, image_path, label_path)
 
             (base_path / 'classes.txt').write_text("cell\n")
-
-            image_path.mkdir(parents=True, exist_ok=True)
-            label_path.mkdir(parents=True, exist_ok=True)
 
         token = '%012d' % self.current
 
@@ -171,6 +174,12 @@ class COCOEncodeRLE(Tunable):
     default = False
 
 
+class COCOOutputStuff(Tunable):
+    """ Whether to output dense stuffthingmaps along the COCO data. """
+
+    default = False
+
+
 class COCOOutput(GroundTruthOutput):
     def __init__(self):
         super().__init__()
@@ -216,10 +225,17 @@ class COCOOutput(GroundTruthOutput):
     def write(self, world, file_name, overwrite=False, **kwargs):
         shape = self.canvas_shape
         digits = self.significant_digits
+        write_stuff = COCOOutputStuff.value
+
         self.current += 1
 
         base_path = Path(file_name)
-        image_path = base_path
+        image_path = base_path / 'train'
+
+        stuff_path = None
+
+        if COCOOutputStuff.value:
+            stuff_path = base_path / 'stuffthings'
 
         if self.current == 0:
             # some initializations
@@ -227,8 +243,7 @@ class COCOOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            base_path.mkdir(parents=True, exist_ok=True)
-            image_path.mkdir(parents=True, exist_ok=True)
+            mkdirs(base_path, image_path, stuff_path)
 
             self.annotation_file = base_path / 'annotations.json'
 
@@ -255,10 +270,15 @@ class COCOOutput(GroundTruthOutput):
             }
         )
 
-        class_ = 0
+        class_ = 0 if not write_stuff else 1
+
+        cells_coords = []
 
         for cell in world.cells:
             bbox = get_bbox_for_cell(cell, shape)
+
+            if write_stuff:
+                cells_coords.append(bbox.points)
 
             area = cv2.contourArea(bbox.points.astype(np.float32))
 
@@ -288,6 +308,16 @@ class COCOOutput(GroundTruthOutput):
                 }
             )
 
+        if write_stuff:
+            stuff_file = stuff_path / image_file_name
+
+            GenericMaskOutput.imwrite(
+                stuff_file,
+                GenericMaskOutput.generate_cells_mask(
+                    cells_coords, cell_value=class_, binary=True
+                ),
+            )
+
 
 class MaskOutputBinary(Tunable):
     """Whether GenericMaskOutput masks should be binary or continuous"""
@@ -302,6 +332,23 @@ class MaskOutputCellValue(Tunable):
 
 
 class GenericMaskOutput(GroundTruthOutput):
+    @staticmethod
+    def generate_cells_mask(cells, cell_value=1, binary=True):
+        mask = PlainRenderer.new_canvas()
+
+        mask = PlainRenderer.render_cells(mask, cells, fast=True)
+
+        mask = PlainRenderer.convert(mask, max_value=cell_value)
+
+        if binary:
+            mask = np.digitize(mask, [0.5 * cell_value]).astype(np.uint8) * cell_value
+
+        return mask
+
+    @staticmethod
+    def imwrite(*args, **kwargs):
+        return PlainRenderer.imwrite(*args, **kwargs)
+
     def write(self, world, file_name, overwrite=False, **kwargs):
         shape = self.canvas_shape
 
@@ -317,10 +364,7 @@ class GenericMaskOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            base_path.mkdir(parents=True, exist_ok=True)
-
-            image_path.mkdir(parents=True, exist_ok=True)
-            mask_path.mkdir(parents=True, exist_ok=True)
+            mkdirs(base_path, image_path, mask_path)
 
         token = '%012d' % self.current
 
@@ -331,17 +375,10 @@ class GenericMaskOutput(GroundTruthOutput):
             channel.write(world, str(image_file))
             break  # only one channel supported
 
-        mask = PlainRenderer.new_canvas()
+        mask = self.generate_cells_mask(
+            [get_bbox_for_cell(cell, shape).points for cell in world.cells],
+            cell_value=MaskOutputCellValue.value,
+            binary=MaskOutputBinary.value,
+        )
 
-        cells = [get_bbox_for_cell(cell, shape).points for cell in world.cells]
-
-        mask = PlainRenderer.render_cells(mask, cells, fast=True)
-
-        max_value = MaskOutputCellValue.value
-
-        mask = PlainRenderer.convert(mask, max_value=max_value)
-
-        if MaskOutputBinary.value:
-            mask = np.digitize(mask, [0.5 * max_value]).astype(np.uint8) * max_value
-
-        PlainRenderer.imwrite(mask_file, mask)
+        self.imwrite(mask_file, mask)
