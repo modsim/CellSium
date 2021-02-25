@@ -31,6 +31,10 @@ BBoxContour = namedtuple(
         'rel_y_delta',
         'rel_x_center',
         'rel_y_center',
+        'rel_x_min',
+        'rel_x_max',
+        'rel_y_min',
+        'rel_y_max',
     ],
 )
 
@@ -48,6 +52,9 @@ def get_bbox_for_cell(cell, shape):
 
     rel_x_center, rel_y_center = x_center / shape[1], y_center / shape[0]
 
+    rel_x_max, rel_y_max = x_max / shape[1], y_max / shape[0]
+    rel_x_min, rel_y_min = x_min / shape[1], y_min / shape[0]
+
     return BBoxContour(
         points=points,
         x_min=x_min,
@@ -62,13 +69,54 @@ def get_bbox_for_cell(cell, shape):
         rel_y_delta=rel_y_delta,
         rel_x_center=rel_x_center,
         rel_y_center=rel_y_center,
+        rel_x_min=rel_x_min,
+        rel_x_max=rel_x_max,
+        rel_y_min=rel_y_min,
+        rel_y_max=rel_y_max,
     )
+
+
+def is_completely_within(bbox):
+    return (
+        0 <= bbox.rel_x_min <= 1
+        and 0 <= bbox.rel_x_max <= 1
+        and bbox.rel_x_min < bbox.rel_x_max
+    ) and (
+        0 <= bbox.rel_y_min <= 1
+        and 0 <= bbox.rel_y_max <= 1
+        and bbox.rel_y_min < bbox.rel_y_max
+    )
+
+
+def remove_outside_cells(world, shape):
+    world = world.copy()
+
+    for cell in world.cells:
+        if not is_completely_within(get_bbox_for_cell(cell, shape=shape)):
+            world.remove(cell)
+
+    world.commit()
+
+    return world
 
 
 def mkdirs(*args):
     for arg in args:
         if arg:
             arg.mkdir(parents=True, exist_ok=True)
+
+
+class GroundTruthOnlyCompleteCells(Tunable):
+    """ Whether to omit cells which would not be completely visible. """
+
+    default = True
+
+
+class GroundTruthOnlyCompleteCellsInImages(Tunable):
+    """Whether to omit cells in rendered images which would not be completely visible,
+    only active if GroundTruthOnlyCompleteCells is set as well."""
+
+    default = True
 
 
 class GroundTruthMaskCoordinateResolution(Tunable):
@@ -126,6 +174,12 @@ class YOLOOutput(GroundTruthOutput):
         image_file = image_path / (token + '.png')
         text_file = label_path / (token + '.txt')
 
+        if (
+            GroundTruthOnlyCompleteCells.value
+            and GroundTruthOnlyCompleteCellsInImages.value
+        ):
+            world = remove_outside_cells(world, shape)
+
         for channel in self.channels:
             channel.write(world, str(image_file))
             break  # only one channel supported
@@ -134,6 +188,9 @@ class YOLOOutput(GroundTruthOutput):
 
         for cell in world.cells:
             bbox = get_bbox_for_cell(cell, shape)
+
+            if GroundTruthOnlyCompleteCells.value and not is_completely_within(bbox):
+                continue
 
             class_ = 0  # only one class at the moment
 
@@ -253,6 +310,12 @@ class COCOOutput(GroundTruthOutput):
 
         image_file = image_path / image_file_name
 
+        if (
+            GroundTruthOnlyCompleteCells.value
+            and GroundTruthOnlyCompleteCellsInImages.value
+        ):
+            world = remove_outside_cells(world, shape)
+
         for channel in self.channels:
             channel.write(world, str(image_file))
             break  # only one channel supported
@@ -276,6 +339,9 @@ class COCOOutput(GroundTruthOutput):
 
         for cell in world.cells:
             bbox = get_bbox_for_cell(cell, shape)
+
+            if GroundTruthOnlyCompleteCells.value and not is_completely_within(bbox):
+                continue
 
             if write_stuff:
                 cells_coords.append(bbox.points)
@@ -371,12 +437,27 @@ class GenericMaskOutput(GroundTruthOutput):
         image_file = image_path / (token + '.png')
         mask_file = mask_path / (token + '.png')
 
+        if (
+            GroundTruthOnlyCompleteCells.value
+            and GroundTruthOnlyCompleteCellsInImages.value
+        ):
+            world = remove_outside_cells(world, shape)
+
         for channel in self.channels:
             channel.write(world, str(image_file))
             break  # only one channel supported
 
+        cell_bboxes = [get_bbox_for_cell(cell, shape) for cell in world.cells]
+
+        if GroundTruthOnlyCompleteCells.value:
+            cell_bboxes = [
+                cell_bbox
+                for cell_bbox in cell_bboxes
+                if is_completely_within(cell_bbox)
+            ]
+
         mask = self.generate_cells_mask(
-            [get_bbox_for_cell(cell, shape).points for cell in world.cells],
+            [cell_bbox.points for cell_bbox in cell_bboxes],
             cell_value=MaskOutputCellValue.value,
             binary=MaskOutputBinary.value,
         )

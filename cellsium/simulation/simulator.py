@@ -35,6 +35,16 @@ class World(object):
         self.cells_to_remove.clear()
         self.cells_to_add.clear()
 
+    def copy(self):
+        new_world = self.__class__()
+        new_world.cells = self.cells[:]
+        new_world.boundaries = self.boundaries[:]
+
+        new_world.cells_to_add = self.cells_to_add[:]
+        new_world.cells_to_remove = self.cells_to_remove[:]
+
+        return new_world
+
 
 class Simulation(object):
     def __init__(self):
