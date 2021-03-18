@@ -118,7 +118,7 @@ EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 class TrackMateXML(Output):
     def __init__(self):
-        super(TrackMateXML, self).__init__()
+        super().__init__()
 
         self.root = ET.fromstring(EMPTY_TRACKMATE_XML)
 

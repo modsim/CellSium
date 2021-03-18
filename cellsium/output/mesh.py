@@ -11,7 +11,7 @@ class MeshCellScaleFactor(Tunable):
 
 class MeshOutput(Output):
     def __init__(self):
-        super(MeshOutput, self).__init__()
+        super().__init__()
 
     def output(self, world, **kwargs):
         meshes = []

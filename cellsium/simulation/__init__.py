@@ -1,4 +1,4 @@
-class BaseSimulator(object):
+class BaseSimulator:
     def add(self, cell):
         pass
 

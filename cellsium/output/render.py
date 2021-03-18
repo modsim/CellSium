@@ -120,6 +120,7 @@ def scale_points_absolute(points, delta=0.0):
     return points
 
 
+# noinspection PyUnusedLocal
 def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0, **kwargs):
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
@@ -215,7 +216,7 @@ class PlainRenderer(Output):
     write_debug_output = False
 
     def __init__(self):
-        super(PlainRenderer, self).__init__()
+        super().__init__()
         self.fig = self.ax = self.imshow_data = None
 
     @staticmethod
@@ -333,7 +334,7 @@ class FluorescenceRenderer(PlainRenderer):
     channel = 0
 
     def __init__(self):
-        super(FluorescenceRenderer, self).__init__()
+        super().__init__()
         canvas = self.new_canvas()
 
         self.rng = RRF.spawn_generator()
@@ -435,7 +436,7 @@ class FluorescenceRenderer(PlainRenderer):
 
 class PhaseContrastRenderer(PlainRenderer):
     def output(self, world, **kwargs):
-        cell_canvas = super(PhaseContrastRenderer, self).output(world)
+        cell_canvas = super().output(world)
 
         background = LuminanceBackground.value * np.ones_like(cell_canvas)
 
@@ -483,7 +484,7 @@ class UnevenIlluminationMultiplicativeFactor(Tunable):
 
 class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def __init__(self):
-        super(UnevenIlluminationPhaseContrast, self).__init__()
+        super().__init__()
 
         self.random_complex_noise = RRF.sequence.uniform(0, 1)
         self.uneven_illumination = None
@@ -499,7 +500,7 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         self.uneven_illumination = self.new_uneven_illumination()
 
     def output(self, world, **kwargs):
-        canvas = super(UnevenIlluminationPhaseContrast, self).output(world)
+        canvas = super().output(world)
 
         self.debug_output('uneven-illumination', self.uneven_illumination)
 
@@ -519,7 +520,7 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
 
 class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
     def __init__(self):
-        super(NoisyUnevenIlluminationPhaseContrast, self).__init__()
+        super().__init__()
 
         empty = self.new_canvas()
 
@@ -527,7 +528,7 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
         self.sum_noise = RRF.sequence.normal(0.0, 0.002, empty.shape)
 
     def output(self, world, **kwargs):
-        canvas = super(NoisyUnevenIlluminationPhaseContrast, self).output(world)
+        canvas = super().output(world)
 
         product_noise = next(self.product_noise)
         sum_noise = next(self.sum_noise)

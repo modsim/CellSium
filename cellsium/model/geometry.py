@@ -5,7 +5,7 @@ import numpy as np
 from ..geometry import *
 
 
-class Shape(object):
+class Shape:
     @staticmethod
     def defaults():
         return dict()
@@ -116,8 +116,9 @@ class Rectangle(Shape):
 
 class Square(Rectangle):
     def raw_points(self, simplify=False):
+        # noinspection PyAttributeOutsideInit
         self.width = self.length
-        return super(Square, self).raw_points(simplify=simplify)
+        return super().raw_points(simplify=simplify)
 
 
 class BentRod(RodShaped):
@@ -157,7 +158,7 @@ class BentRod(RodShaped):
     def get_approximation_circles(self):
         radii = []
         offsets = []
-        for radius, offset in super(BentRod, self).get_approximation_circles():
+        for radius, offset in super().get_approximation_circles():
             radii.append(radius)
             offsets.append(offset)
         offsets = np.array(offsets)
@@ -189,7 +190,7 @@ class Ellipsoid(Coccoid):
         return dict(length=2.0, width=1.0)
 
     def raw_points(self, simplify=False):
-        points = super(Ellipsoid, self).raw_points()
+        points = super().raw_points()
 
         a = self.length / 2
         b = self.width / 2
@@ -199,25 +200,25 @@ class Ellipsoid(Coccoid):
         return points
 
 
-class WithPosition(object):
+class WithPosition:
     @staticmethod
     def defaults():
         return dict(position=lambda: [0.0, 0.0])
 
 
-class WithAngle(object):
+class WithAngle:
     @staticmethod
     def defaults():
         return dict(angle=0.0)
 
 
-class WithFluorescence(object):
+class WithFluorescence:
     @staticmethod
     def defaults():
         return dict(fluorescences=lambda: [0.0])
 
 
-class WithProperDivisionBehavior(object):
+class WithProperDivisionBehavior:
     def get_division_positions(self, count=2):
         # must have a length, a position and an angle
 

@@ -3,7 +3,7 @@ import numpy as np
 from ..parameters import s_to_h
 
 
-class World(object):
+class World:
     def __init__(self):
         self.cells = []
         self.boundaries = []
@@ -46,13 +46,13 @@ class World(object):
         return new_world
 
 
-class Simulation(object):
+class Simulation:
     def __init__(self):
         self.world = World()
         self.time = 0.0
 
 
-class Timestep(object):
+class Timestep:
     __slots__ = 'timestep', 'simulation', 'simulator'
 
     @property
@@ -71,7 +71,7 @@ class Timestep(object):
         self.timestep, self.simulation, self.simulator = timestep, simulation, simulator
 
 
-class Simulator(object):
+class Simulator:
     def __init__(self):
         simulation = Simulation()
         self.simulation = simulation

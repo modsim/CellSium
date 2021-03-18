@@ -11,7 +11,7 @@ class MicrometerPerCm(Tunable):
 
 class PlotRenderer(Output, Output.Default):
     def __init__(self):
-        super(PlotRenderer, self).__init__()
+        super().__init__()
 
         self.fig = self.ax = None
 

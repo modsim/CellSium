@@ -13,7 +13,7 @@ class MicrometerPerCm(Tunable):
 
 class SvgRenderer(Output):
     def __init__(self):
-        super(SvgRenderer, self).__init__()
+        super().__init__()
 
         self.root = ET.Element('svg')
 

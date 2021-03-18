@@ -145,7 +145,7 @@ class GroundTruthOutput(Output, Output.Virtual):
         )
 
     def output(self, world, **kwargs):
-        raise NotImplementedError()
+        raise RuntimeError("GroundTruthOutput s only support writing.")
 
 
 class YOLOOutput(GroundTruthOutput):

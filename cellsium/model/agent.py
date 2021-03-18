@@ -17,7 +17,7 @@ def iter_through_class_hierarchy(cls):
     return collector
 
 
-class InitializeWithParameters(object):
+class InitializeWithParameters:
     def __init__(self, **kwargs):
         for cls_ in iter_through_class_hierarchy(self.__class__):
             if hasattr(cls_, 'defaults'):
@@ -79,9 +79,9 @@ def next_cell_id():
     return _id_counter
 
 
-class WithLineage(object):
+class WithLineage:
     def copy(self):
-        copy = super(WithLineage, self).copy()
+        copy = super().copy()
         copy.next_cell_id()
         return copy
 
@@ -94,13 +94,13 @@ class WithLineage(object):
         return dict(id_=lambda: next_cell_id(), parent_id=0)
 
 
-class WithLineageHistory(object):
+class WithLineageHistory:
     @staticmethod
     def defaults():
         return dict(lineage_history=lambda: [0])
 
 
-class WithTemporalLineage(object):
+class WithTemporalLineage:
     @staticmethod
     def defaults():
         return dict(birth_time=0.0)
