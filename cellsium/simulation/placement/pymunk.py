@@ -22,9 +22,9 @@ class Chipmunk(PlacementSimulation, PlacementSimulation.Default):
     verbose = False
 
     def __init__(self):
-        self.space = pymunk.Space(threaded=True)
+        self.space = pymunk.Space(threaded=False)
 
-        self.space.threads = 2
+        # self.space.threads = 2
         self.space.iterations = 100
 
         self.space.gravity = 0, 0
