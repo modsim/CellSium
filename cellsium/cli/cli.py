@@ -4,7 +4,8 @@ import sys
 
 from tunable import TunableSelectable
 
-from . import render, set_seed, simulate, training
+from ..random import RRF
+from . import render, simulate, training
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def main():
 
     args = parse_arguments_and_init(parser_callback=subcommand_argparser)
 
-    seed = set_seed()
+    seed = RRF.seed()
     log.info("Seeding with %s" % (seed,))
 
     return subcommand.subcommand_main(args=args)

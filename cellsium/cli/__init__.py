@@ -1,18 +1,8 @@
 import os
 
 from ..model import *
-from ..parameters import CellParameterGenerator, Seed
-from ..random import RRF
 from ..simulation.placement import PlacementSimulation
 from ..simulation.simulator import Simulator
-
-
-def set_seed(seed=None):
-    if seed is None:
-        seed = Seed.value
-    RRF.seed(seed)
-    return seed
-
 
 # class Cell(PlacedCell, TimerCell):
 #     pass
@@ -20,24 +10,6 @@ def set_seed(seed=None):
 
 class Cell(PlacedCell, SizerCell):
     pass
-
-
-def new_cell(cpg, cell_type):
-    length, width = 1, 2
-
-    while width > length:
-        length = next(cpg.length)
-        width = next(cpg.width)
-
-    return cell_type(
-        position=next(cpg.position),
-        angle=next(cpg.angle),
-        length=length,
-        width=width,
-        bend_overall=next(cpg.bend_overall),
-        bend_upper=next(cpg.bend_upper),
-        bend_lower=next(cpg.bend_lower),
-    )
 
 
 def initialize_simulator():
@@ -49,16 +21,17 @@ def initialize_simulator():
     return simulator
 
 
-def initialize_cells(simulator, count=0, cpg=None):
-    if cpg is None:
-        cpg = CellParameterGenerator()
+def initialize_cells(simulator, count=0):
+    cell_type = Cell
+
+    random_sequences = cell_type.get_random_sequences()
 
     for _ in range(count):
-        cell = new_cell(cpg, Cell)
+
+        init_kwargs = {k: next(v) for k, v in random_sequences.items()}
+        cell = cell_type(**init_kwargs)
         cell.birth()
         simulator.add(cell)
-
-    return cpg
 
 
 def generate_output_name(args, output_count=0, output=None):

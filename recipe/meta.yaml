@@ -24,7 +24,7 @@ requirements:
     - flit-core
   run:
     - python >=3.7
-    - numpy
+    - numpy >=1.17
     - scipy
     - matplotlib
     - pymunk >=6.0.0

@@ -296,20 +296,6 @@ class PlainRenderer(Output):
             self.fig.canvas.flush_events()
 
 
-# this weird construction is necessary for a sequence of reproducible randomness
-class SeqOfPairsOfUniform(object):
-    __slots__ = 'x0', 'x1', 'y0', 'y1'
-
-    def __init__(self):
-        self.x0, self.x1, self.y0, self.y1 = 0, 0, 0, 0
-
-    def set_bounds(self, x0, x1, y0, y1):
-        self.x0, self.x1, self.y0, self.y1 = x0, x1, y0, y1
-
-    def next(self):
-        return np.random.uniform(self.x0, self.x1), np.random.uniform(self.y0, self.y1)
-
-
 class FluorescenceEmitterKernelSizeW(Tunable):
     default = 17
 
@@ -350,8 +336,9 @@ class FluorescenceRenderer(PlainRenderer):
         super(FluorescenceRenderer, self).__init__()
         canvas = self.new_canvas()
 
-        self.random_noise = RRF.new(
-            np.random.normal,
+        self.rng = RRF.spawn_generator()
+
+        self.random_noise = RRF.sequence.normal(
             FluorescenceNoiseMean.value,
             FluorescenceNoiseStd.value,
             canvas.shape,
@@ -381,9 +368,6 @@ class FluorescenceRenderer(PlainRenderer):
 
         p_canvas = np.pad(canvas, emitter_size, mode='reflect')
 
-        sopou = SeqOfPairsOfUniform()
-        sopou_gen = RRF.new(sopou.next)
-
         for cell in world.cells:
             points = um_to_pixel(cell.points_on_canvas())
             #
@@ -412,15 +396,13 @@ class FluorescenceRenderer(PlainRenderer):
                 cv2.contourArea(pts) / FluorescenceCellSizeFactor.value
             )
 
-            sopou.set_bounds(
-                points[:, 0].min(),
-                points[:, 0].max(),
-                points[:, 1].min(),
-                points[:, 1].max(),
-            )
+            points_x_min, points_x_max = points[:, 0].min(), points[:, 0].max()
+            points_y_min, points_y_max = points[:, 1].min(), points[:, 1].max()
 
             while int_countdown > 0:
-                x, y = next(sopou_gen)
+                # TODO needs tests
+                x = self.rng.uniform(points_x_min, points_x_max)
+                y = self.rng.uniform(points_y_min, points_y_max)
 
                 if cv2.pointPolygonTest(pts, (x, y), measureDist=False) > 0.0:
                     target = p_canvas[
@@ -503,7 +485,7 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def __init__(self):
         super(UnevenIlluminationPhaseContrast, self).__init__()
 
-        self.random_complex_noise = RRF.new(np.random.uniform, 0, 1)
+        self.random_complex_noise = RRF.sequence.uniform(0, 1)
         self.uneven_illumination = None
         self.create_uneven_illumination()
 
@@ -541,8 +523,8 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
 
         empty = self.new_canvas()
 
-        self.product_noise = RRF.new(np.random.normal, 1.0, 0.002, empty.shape)
-        self.sum_noise = RRF.new(np.random.normal, 0.0, 0.002, empty.shape)
+        self.product_noise = RRF.sequence.normal(1.0, 0.002, empty.shape)
+        self.sum_noise = RRF.sequence.normal(0.0, 0.002, empty.shape)
 
     def output(self, world, **kwargs):
         canvas = super(NoisyUnevenIlluminationPhaseContrast, self).output(world)

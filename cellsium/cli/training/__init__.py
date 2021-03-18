@@ -1,4 +1,3 @@
-import numpy as np
 import tqdm
 from tunable import Tunable, TunableManager
 
@@ -41,20 +40,18 @@ def subcommand_main(args):
         reset=False,
     )
 
-    ccf = RRF.new(np.random.randint, 0, cell_count * 2)
+    ccf = RRF.sequence.integers(0, cell_count * 2)
 
     if not args.output:
         raise RuntimeError("Output must be set")
 
     outputs = Output.SelectableGetMultiple()
 
-    cpg = None
-
     output_count = 0
 
     for _ in tqdm.tqdm(range(TrainingDataCount.value)):
         simulator = initialize_simulator()
-        cpg = initialize_cells(simulator, count=next(ccf), cpg=cpg)
+        initialize_cells(simulator, count=next(ccf))
 
         simulator.step(60.0)
 

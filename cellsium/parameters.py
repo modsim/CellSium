@@ -1,15 +1,8 @@
-import numpy as np
 from tunable import Tunable
-
-from .random import RRF, enforce_bounds
 
 
 class RandomlyDistributed(Tunable):
     pass
-
-
-class Seed(Tunable):
-    default = '1'
 
 
 class NewCellCount(Tunable):
@@ -82,55 +75,6 @@ class NewCellBendLowerLower(RandomlyDistributed):
 
 class NewCellBendLowerUpper(RandomlyDistributed):
     default = 0.1
-
-
-class CellParameterGenerator(object):
-    def __init__(self):
-        assert NewCellLength1Mean.value > NewCellWidthMean.value
-        assert NewCellLength2Mean.value > NewCellWidthMean.value
-
-        length_raw = enforce_bounds(
-            RRF.new(
-                np.random.multivariate_normal,
-                [NewCellLength1Mean.value, NewCellLength2Mean.value],
-                [[NewCellLength1Std.value, 0.0], [0.0, NewCellLength2Std.value]],
-            ),
-            minimum=NewCellLengthAbsoluteMin.value,
-            maximum=NewCellLengthAbsoluteMax.value,
-        )
-
-        self.length = RRF.new(lambda: float(next(length_raw)[np.random.randint(0, 1)]))
-
-        self.width = enforce_bounds(
-            RRF.new(np.random.normal, NewCellWidthMean.value, NewCellWidthStd.value),
-            minimum=NewCellWidthAbsoluteMin.value,
-            maximum=NewCellWidthAbsoluteMax.value,
-        )
-
-        self.bend_overall = RRF.new(
-            np.random.uniform,
-            NewCellBendOverallLower.value,
-            NewCellBendOverallUpper.value,
-        )
-        self.bend_upper = RRF.new(
-            np.random.uniform, NewCellBendUpperLower.value, NewCellBendUpperUpper.value
-        )
-        self.bend_lower = RRF.new(
-            np.random.uniform, NewCellBendLowerLower.value, NewCellBendLowerUpper.value
-        )
-
-        def _position():
-            radius = np.random.uniform(0, NewCellRadiusFromCenter.value)
-            angle = np.radians(np.random.uniform(0, 360.0))
-            return [
-                float(radius * np.cos(angle) + Width.value / 2),
-                float(radius * np.sin(angle) + Height.value / 2),
-            ]
-
-        self.position = RRF.new(_position)
-
-        # does it make sense to make the angle configurable?
-        self.angle = RRF.new(lambda: float(np.radians(np.random.uniform(0, 360.0))))
 
 
 class Width(Tunable):

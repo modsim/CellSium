@@ -10,7 +10,7 @@ home-page = "https://github.com/modsim/cellsium"
 description-file = "README.md"
 license = "BSD"
 requires = [
-    "numpy",
+    "numpy>=1.17",
     "scipy",
     "matplotlib",
     "tunable",

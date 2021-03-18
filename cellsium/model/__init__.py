@@ -1,11 +1,12 @@
-from math import log
-
-import numpy as np
-
 from ..parameters import h_to_s, s_to_h
-from ..random import RRF
 from .agent import *
 from .geometry import *
+from .initialization import (
+    RandomAngle,
+    RandomBentRod,
+    RandomPosition,
+    RandomWidthLength,
+)
 
 
 class PlacedCell(
@@ -15,13 +16,19 @@ class PlacedCell(
     WithProperDivisionBehavior,
     InitializeWithParameters,
     Copyable,
+    Representable,
+    WithRandomSequences,
+    RandomWidthLength,
+    RandomBentRod,
+    RandomPosition,
+    RandomAngle,
     CellGeometry,
     BentRod,
 ):
     pass
 
 
-class SimulatedCell(object):
+class SimulatedCell:
     def birth(self, parent=None, ts=None):
         pass
 
@@ -60,10 +67,12 @@ class SimulatedCell(object):
 
 # noinspection PyAttributeOutsideInit
 class SizerCell(SimulatedCell):
-    sizer_series = RRF.new(np.random.normal, 3.0, 0.25)  # µm
+    @staticmethod
+    def random_sequences(sequence):
+        return dict(division_size=sequence.normal(3.0, 0.25))  # µm
 
     def birth(self, parent=None, ts=None):
-        self.division_size = next(self.__class__.sizer_series)
+        self.division_size = next(self.random.division_size)
         self.elongation_rate = 1.5
 
     def grow(self, ts):
@@ -76,11 +85,13 @@ class SizerCell(SimulatedCell):
 
 # noinspection PyAttributeOutsideInit
 class TimerCell(SimulatedCell):
-    elongation_rate_series = RRF.new(np.random.normal, 1.5, 0.25)  # µm·h⁻¹
+    @staticmethod
+    def random_sequences(sequence):
+        return dict(elongation_rate=sequence.normal(1.5, 0.25))  # µm·h⁻¹
 
     def birth(self, parent=None, ts=None):
+        self.elongation_rate = next(self.random.elongation_rate)
         self.division_time = h_to_s(1.0)
-        self.elongation_rate = next(self.__class__.elongation_rate_series)
 
     def grow(self, ts):
         self.length += self.elongation_rate * ts.hours
