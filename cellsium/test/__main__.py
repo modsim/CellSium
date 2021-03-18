@@ -17,7 +17,9 @@ def collect_modules_recursive(start, blacklist=None):
     :return:
     """
 
-    if not isinstance(blacklist, list):
+    if blacklist is None:
+        blacklist = []
+    elif not isinstance(blacklist, list):
         blacklist = [blacklist]
 
     collector = set()
