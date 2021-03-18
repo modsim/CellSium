@@ -1,24 +1,13 @@
-import argparse
-
 import jsonpickle
-from tunable import Tunable, TunableSelectable
 
 from ...output.all import *
-from .. import set_seed
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def subcommand_argparser(parser):
+    parser.add_argument('-i', '--input-file', dest='input', default=None, required=True)
 
-    parser.add_argument('-o', '--output-file', dest='output', default=None)
-    parser.add_argument('-i', '--input-file', dest='input', default=None)
 
-    TunableSelectable.setup_and_parse(parser)
-
-    args = parser.parse_args()
-
-    set_seed()
-
+def subcommand_main(args):
     output = Output()
 
     with open(args.input, 'r') as fp:
