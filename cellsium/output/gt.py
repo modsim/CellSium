@@ -241,6 +241,8 @@ class COCOOutput(GroundTruthOutput):
     def __init__(self):
         super().__init__()
 
+        self.annotation_file = None
+
         self.coco_structure = {
             'info': {
                 'year': datetime.now().year,
