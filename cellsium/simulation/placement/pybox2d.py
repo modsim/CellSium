@@ -2,10 +2,14 @@
 import Box2D as B2D
 import numpy as np
 
-from .base import PlacementSimulation, PlacementSimulationSimplification
+from .base import (
+    PhysicalPlacement,
+    PlacementSimulation,
+    PlacementSimulationSimplification,
+)
 
 
-class Box2D(PlacementSimulation):
+class Box2D(PhysicalPlacement, PlacementSimulation):
 
     verbose = False
 
@@ -13,10 +17,7 @@ class Box2D(PlacementSimulation):
         self.world = B2D.b2World()
         self.world.gravity = 0, 0
 
-        self.cell_bodies = {}
-        self.cell_shapes = {}
-
-        self.boundaries = []
+        super().__init__()
 
     def add_boundary(self, coordinates):
         coordinates = np.array(coordinates)
@@ -56,30 +57,6 @@ class Box2D(PlacementSimulation):
         self.world.DestroyBody(self.cell_bodies[cell])
 
         del self.cell_bodies[cell]
-
-    def clear(self):
-        for cell in list(self.cell_bodies.keys()):
-            self.remove(cell)
-
-    def _get_positions(self):
-        array = np.zeros((len(self.cell_bodies), 3))
-        for n, body in enumerate(
-            sorted(self.cell_bodies.values(), key=lambda body_: id(body_))
-        ):
-            array[n, :] = body.position[0], body.position[1], body.angle
-        return array
-
-    @staticmethod
-    def _all_distances(before, after):
-        return np.sqrt(((after - before) ** 2).sum(axis=1))
-
-    @classmethod
-    def _total_distance(cls, before, after):
-        return cls._all_distances(before, after).sum()
-
-    @classmethod
-    def _mean_distance(cls, before, after):
-        return cls._all_distances(before, after).mean()
 
     def step(self, timestep):
         velocity_iter, position_iter = 6, 30
