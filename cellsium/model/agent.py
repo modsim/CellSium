@@ -31,17 +31,26 @@ class InitializeWithParameters:
 
 
 class WithRandomSequences:
+
+    all_random_sequences_generated_for = {}
+
     @classmethod
     def get_random_sequences(cls, sequence=None):
-        if hasattr(cls, 'all_random_sequences'):
-            return cls.all_random_sequences
-        cls.all_random_sequences = {}
-        if sequence is None:
-            sequence = RRF.sequence
-        for cls_ in iter_through_class_hierarchy(cls):
-            if hasattr(cls_, 'random_sequences'):
-                cls.all_random_sequences.update(cls_.random_sequences(sequence))
-        return cls.all_random_sequences
+        if sequence is not None and cls in cls.all_random_sequences_generated_for:
+            del cls.all_random_sequences_generated_for[cls]
+
+        if cls not in cls.all_random_sequences_generated_for:
+            all_random_sequences = {}
+            if sequence is None:
+                sequence = RRF.sequence
+            for cls_ in iter_through_class_hierarchy(cls):
+                if hasattr(cls_, 'random_sequences'):
+                    for key, value in cls_.random_sequences(sequence).items():
+                        all_random_sequences[key] = value
+
+            cls.all_random_sequences_generated_for[cls] = all_random_sequences
+
+        return cls.all_random_sequences_generated_for[cls]
 
     @property
     def random(self):
@@ -70,13 +79,17 @@ class Representable:
         )
 
 
-_id_counter = 0
+class IdCounter:
+    id_counter = 0
 
+    @classmethod
+    def next_cell_id(cls):
+        cls.id_counter += 1
+        return cls.id_counter
 
-def next_cell_id():
-    global _id_counter
-    _id_counter += 1
-    return _id_counter
+    @classmethod
+    def reset(cls):
+        cls.id_counter = 0
 
 
 class WithLineage:
@@ -87,11 +100,11 @@ class WithLineage:
 
     # noinspection PyAttributeOutsideInit
     def next_cell_id(self):
-        self.id_ = next_cell_id()
+        self.id_ = IdCounter.next_cell_id()
 
     @staticmethod
     def defaults():
-        return dict(id_=lambda: next_cell_id(), parent_id=0)
+        return dict(id_=lambda: IdCounter.next_cell_id(), parent_id=0)
 
 
 class WithLineageHistory:
