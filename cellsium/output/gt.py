@@ -394,13 +394,13 @@ class COCOOutput(GroundTruthOutput):
 class MaskOutputBinary(Tunable):
     """Whether GenericMaskOutput masks should be binary or continuous"""
 
-    value = True
+    default = True
 
 
 class MaskOutputCellValue(Tunable):
     """Value for foreground in GenericMaskOutput masks"""
 
-    value = 255
+    default = 255
 
 
 class GenericMaskOutput(GroundTruthOutput):
