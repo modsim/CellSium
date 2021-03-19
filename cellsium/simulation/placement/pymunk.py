@@ -33,18 +33,27 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         self.space.gravity = 0, 0
 
+        self.boundary_bodies = []
+        self.boundary_segments = []
+
         super().__init__()
 
     def add_boundary(self, coordinates):
         coordinates = np.array(coordinates)
-        new_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+
+        boundary_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+
+        boundary_segments = []
 
         for start, stop in zip(coordinates, coordinates[1:]):
             self.boundaries.append([start, stop])
-            segment = pymunk.Segment(new_body, start, stop, 0.0)
-            self.space.add(segment)
+            segment = pymunk.Segment(boundary_body, start.tolist(), stop.tolist(), 0.0)
+            boundary_segments.append(segment)
 
-        self.space.add(new_body)
+        self.space.add(boundary_body, *boundary_segments)
+
+        self.boundary_bodies.append(boundary_body)
+        self.boundary_segments.append(boundary_segments)
 
     def add(self, cell):
         body = pymunk.Body(1.0, 1.0)
@@ -76,6 +85,18 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         del self.cell_bodies[cell]
         del self.cell_shapes[cell]
+
+    def clear(self):
+        super().clear()
+
+        for boundary_body, boundary_segments in zip(
+            self.boundary_bodies, self.boundary_segments
+        ):
+            self.space.remove(boundary_body)
+            self.space.remove(*boundary_segments)
+
+        self.boundary_bodies.clear()
+        self.boundary_segments.clear()
 
     def step(self, timestep):
         if len(self.cell_bodies) == 0:

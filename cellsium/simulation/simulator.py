@@ -108,6 +108,10 @@ class Simulator:
 
         for sim in self.sub_simulators:
             sim.clear()
+
+            for boundary in self.simulation.world.boundaries:
+                sim.add_boundary(boundary)
+
             for cell in simulation.world.cells:
                 sim.add(cell)
 
