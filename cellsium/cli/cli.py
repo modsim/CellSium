@@ -10,7 +10,7 @@ from . import render, simulate, training
 log = logging.getLogger(__name__)
 
 
-def parse_arguments_and_init(parser_callback=None):
+def parse_arguments_and_init(args, parser_callback=None):
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)-15s.%(msecs)03d %(name)s %(levelname)s %(message)s",
@@ -34,19 +34,18 @@ def parse_arguments_and_init(parser_callback=None):
         '-v', '--verbose', dest='verbose', default=1, action='count'
     )
 
-    TunableSelectable.setup_and_parse(parser)
+    TunableSelectable.setup_and_parse(parser, args=args)
 
     if parser_callback:
         parser_callback(parser)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
 
     if args.quiet:
         log.setLevel(logging.WARNING)
     elif args.verbose == 1:
         log.setLevel(logging.INFO)
-    else:
-        # possibly switch on more debug settings
+    elif args.verbose > 1:
         log.setLevel(logging.DEBUG)
 
     return args
@@ -56,23 +55,26 @@ subcommands = {simulate, render, training}
 subcommand_default = simulate
 
 
-def main():
-    if len(sys.argv) == 1:
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+
+    if not args:
         subcommand = subcommand_default
     else:
         subcommands_dict = {
             subcommand.__name__.split('.')[-1]: subcommand for subcommand in subcommands
         }
-        first_arg = sys.argv[1]
+        first_arg = args[0]
         if first_arg in subcommands_dict:
             subcommand = subcommands_dict[first_arg]
-            del sys.argv[1]
+            del args[0]
         else:
             subcommand = subcommand_default
 
     subcommand_argparser = getattr(subcommand, 'subcommand_argparser', None)
 
-    args = parse_arguments_and_init(parser_callback=subcommand_argparser)
+    args = parse_arguments_and_init(args=args, parser_callback=subcommand_argparser)
 
     seed = RRF.seed()
     log.info("Seeding with %s" % (seed,))
