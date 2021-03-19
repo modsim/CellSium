@@ -238,7 +238,7 @@ class AutoMesh3D(Shape3D):
     def points3d_on_canvas(self, steps=16, simplify=False):
         points, triangles = self.raw_points3d(steps=steps, simplify=simplify)
 
-        axis_vector = [[0], [0], [1]]
+        axis_vector = ((0,), (0,), (1,))
 
         position3d = self.position
 

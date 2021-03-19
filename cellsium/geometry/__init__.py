@@ -1,4 +1,13 @@
+from functools import lru_cache
+
 import numpy as np
+
+
+@lru_cache(maxsize=128)
+def cached_linspace(start, stop, num):
+    array = np.linspace(start=start, stop=stop, num=num)
+    array.setflags(write=False)
+    return array
 
 
 def line(start, stop, interval=0.1, minimum_times=10, times=None):
@@ -8,7 +17,7 @@ def line(start, stop, interval=0.1, minimum_times=10, times=None):
     if times is None:
         times = max(int(np.linalg.norm(delta) / interval) + 1, minimum_times)
 
-    ramp = np.linspace(0.0, 1.0, times)
+    ramp = cached_linspace(start=0.0, stop=1.0, num=times)
     ramp = np.c_[ramp, ramp]
 
     return start + delta * ramp
@@ -20,8 +29,7 @@ def circle_segment(radius, start, stop, interval=0.1, minimum_times=10, times=No
 
     if times is None:
         times = max(int((stop - start) / interval), minimum_times)
-
-    ramp = np.linspace(start, stop, times)
+    ramp = cached_linspace(start, stop, times)
     return radius * np.c_[np.cos(ramp), np.sin(ramp)]
 
 
@@ -65,8 +73,7 @@ def cross_product_matrix(vec):
     return np.array([[0, -vec[2], vec[1]], [vec[2], 0, -vec[0]], [-vec[1], vec[0], 0]])
 
 
-# for Py3 this could be lru cache decorated, as the step-sizes of the angles
-# tend to be the same for each set of calculations
+@lru_cache(maxsize=128)
 def get_rotation_matrix3d_angle_axis(angle, axis_vector):
     cos_a, sin_a = np.cos(angle), np.sin(angle)
 
@@ -75,6 +82,8 @@ def get_rotation_matrix3d_angle_axis(angle, axis_vector):
         + sin_a * cross_product_matrix(axis_vector)
         + (1 - cos_a) * np.tensordot(axis_vector, axis_vector, axes=0).reshape((3, 3))
     )
+
+    r.setflags(write=False)
 
     return r
 
@@ -102,12 +111,16 @@ def rotate_and_mesh(points, steps=16, clean=True, close_ends=True):
 
     all_points = points.repeat(steps, axis=0)
 
-    axis_vector = [[1], [0], [0]]
+    axis_vector = (
+        (1,),
+        (0,),
+        (0,),
+    )
     max_angle = np.radians(360.0 if clean else 180.0)
 
     for n, (angle, idx) in enumerate(
         zip(
-            np.linspace(0, max_angle, num=steps),
+            cached_linspace(0, max_angle, num=steps),
             range(0, len(points) * steps, len(points)),
         )
     ):
