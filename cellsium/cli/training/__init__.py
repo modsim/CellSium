@@ -41,6 +41,7 @@ def subcommand_main(args):
     )
 
     ccf = RRF.sequence.integers(0, cell_count * 2)
+    next(ccf)  # for seed = 1 and PCG64, the first value will be a zero ... skip that
 
     if not args.output:
         raise RuntimeError("Output must be set")
