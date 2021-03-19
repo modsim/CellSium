@@ -176,7 +176,7 @@ def render_on_canvas_matplotlib(
 
     fig.canvas.draw()
 
-    canvas_data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(
+    canvas_data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(
         fig.canvas.get_width_height()[::-1] + (3,)
     )[:, :, 0]
     if canvas_data.max() > 0.0:
@@ -674,8 +674,7 @@ class TiffOutput(Output):
             writer.save(
                 result,
                 resolution=(um_to_pixel(1.0), um_to_pixel(1.0)),
-                metadata=dict(unit='um'),
-                ijmetadata=dict(Overlays=binary_rois),
+                metadata=dict(unit='um', Overlays=binary_rois),
             )
 
     def write(self, world, file_name, **kwargs):
