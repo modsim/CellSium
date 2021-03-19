@@ -7,7 +7,7 @@ def ensure_path(path):
 
     path = Path(path)
     if not path.parent.is_dir():
-        path.parent.mkdir(exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
 
     return str(path)
 
