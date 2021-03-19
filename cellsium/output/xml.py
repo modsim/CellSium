@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from tunable import Tunable
 
 from ..parameters import Calibration, Height, Width, um_to_pixel
-from . import Output
+from . import Output, check_overwrite, ensure_path_and_extension
 
 
 class TrackMateXMLExportFluorescences(Tunable):
@@ -304,15 +306,21 @@ class TrackMateXML(Output):
         self.all_spots.attrib['nspots'] = str(self.spot_counter)
 
     # noinspection PyMethodOverriding
-    def write(self, world, file_name, time, **kwargs):
+    def write(self, world, file_name, time=0.0, overwrite=False, **kwargs):
         self.output(world, time=time)
 
-        self.image_data['filename'] = file_name + '.tif'
+        self.image_data['filename'] = Path(
+            ensure_path_and_extension(file_name, '.tif')
+        ).name
 
-        if not file_name.endswith('.xml'):
-            file_name += '.xml'
+        file_name = check_overwrite(
+            ensure_path_and_extension(file_name, '.xml'), overwrite=overwrite
+        )
 
         self.xml.write(file_name)
 
     def display(self, world, **kwargs):
         raise RuntimeError('Unsupported')
+
+
+__all__ = ['TrackMateXML']

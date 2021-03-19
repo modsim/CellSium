@@ -4,7 +4,7 @@ from tunable import Tunable, TunableManager
 from ...output import Output
 from ...parameters import pixel_to_um
 from ...random import RRF
-from .. import generate_output_name, initialize_cells, initialize_simulator
+from .. import add_output_prefix, initialize_cells, initialize_simulator
 
 
 class TrainingDataCount(Tunable):
@@ -56,11 +56,14 @@ def subcommand_main(args):
         simulator.step(60.0)
 
         for output in outputs:
-            output_name = generate_output_name(
-                args, output_count=output_count, output=output
-            )
+            if args.prefix:
+                output_name = add_output_prefix(args.output, output=output)
+
             output.write(
-                simulator.simulation.world, output_name, overwrite=args.overwrite
+                simulator.simulation.world,
+                output_name,
+                overwrite=args.overwrite,
+                output_count=output_count,
             )
 
         output_count += 1

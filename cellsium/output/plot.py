@@ -2,7 +2,7 @@ from matplotlib import pyplot
 from tunable import Tunable
 
 from ..parameters import Height, Width
-from . import Output
+from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class MicrometerPerCm(Tunable):
@@ -48,9 +48,23 @@ class PlotRenderer(Output, Output.Default):
 
         return fig, ax
 
-    def write(self, world, file_name, **kwargs):
+    def write(self, world, file_name, output_number=0, overwrite=False, **kwargs):
         fig, ax = self.output(world)
-        fig.savefig(file_name)
+
+        extensions = ['.png'] + [
+            '.' + extension
+            for extension in fig.canvas.get_supported_filetypes().keys()
+            if extension != 'png'
+        ]
+
+        fig.savefig(
+            check_overwrite(
+                ensure_path_and_extension_and_number(
+                    file_name, extensions, output_number
+                ),
+                overwrite=overwrite,
+            )
+        )
 
     def display(self, world, **kwargs):
         pyplot.ion()
@@ -58,3 +72,6 @@ class PlotRenderer(Output, Output.Default):
         pyplot.show()
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+
+__all__ = ['PlotRenderer']

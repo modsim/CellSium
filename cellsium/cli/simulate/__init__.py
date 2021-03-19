@@ -7,7 +7,7 @@ from tunable import Tunable
 
 from ...output import Output
 from ...parameters import NewCellCount, h_to_s, s_to_h
-from .. import generate_output_name, initialize_cells, initialize_simulator
+from .. import add_output_prefix, initialize_cells, initialize_simulator
 
 
 class SimulationDuration(Tunable):
@@ -109,13 +109,15 @@ def subcommand_main(args):
                     for output in outputs:
                         output_before = time()
                         if args.output:
-                            output_name = generate_output_name(
-                                args, output_count=output_count, output=output
-                            )
+                            if args.prefix:
+                                output_name = add_output_prefix(
+                                    args.output, output=output
+                                )
                             output.write(
                                 simulator.simulation.world,
                                 output_name,
                                 time=simulation_time,
+                                output_count=output_count,
                                 overwrite=args.overwrite,
                             )
                         else:

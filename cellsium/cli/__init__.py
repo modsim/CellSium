@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from ..model import *
 from ..simulation.placement import PlacementSimulation
@@ -34,16 +34,11 @@ def initialize_cells(simulator, count=0):
         simulator.add(cell)
 
 
-def generate_output_name(args, output_count=0, output=None):
-    try:
-        output_name = args.output % (output_count,)
-    except TypeError:
-        output_name = args.output
+def add_output_prefix(output_name, output=None):
+    output_name = Path(output_name)
 
-    if args.prefix and output:
-        output_name = os.path.join(
-            os.path.dirname(output_name),
-            output.__class__.__name__ + '-' + os.path.basename(output_name),
-        )
+    output_name = output_name.parent / (
+        output.__class__.__name__ + '-' + output_name.name
+    )
 
-    return output_name
+    return str(output_name)

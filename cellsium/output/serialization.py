@@ -1,28 +1,36 @@
 import jsonpickle
 import numpy as np
 
-from . import Output
+from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class JsonPickleSerializer(Output):
     def output(self, world, **kwargs):
         return jsonpickle.dumps(world)
 
-    def write(self, world, file_name, **kwargs):
-        with open(file_name, 'w+') as fp:
+    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+        with open(
+            check_overwrite(
+                ensure_path_and_extension_and_number(file_name, '.json', output_count),
+                overwrite=overwrite,
+            ),
+            'w+',
+        ) as fp:
             fp.write(self.output(world))
 
     def display(self, world, **kwargs):
         print(self.output(world))
 
 
-def type2numpy(value):
+def type2numpy(value, max_len=None):
     if isinstance(value, int):
         return 'i8'
     elif isinstance(value, float):
         return 'f8'
     elif isinstance(value, list):
-        return str(len(value)) + type2numpy(value[0])
+        if max_len is None:
+            max_len = len(value)
+        return '(' + str(max_len) + ',)' + type2numpy(value[0])
     else:
         raise RuntimeError('...')
 
@@ -30,16 +38,45 @@ def type2numpy(value):
 # dir(C);val = getattr(C, k);if k.startswith('__') or hasattr(val, '__call__') or hasattr(val, '__next__'):
 
 
-def prepare_numpy_dtype(inner):
-    return [(key, type2numpy(value)) for key, value in sorted(inner.items())]
+def prepare_numpy_dtype(inner, list_max_lens=None):
+    return [
+        (
+            key,
+            type2numpy(
+                value,
+                max_len=list_max_lens[key]
+                if list_max_lens and key in list_max_lens
+                else None,
+            ),
+        )
+        for key, value in sorted(inner.items())
+    ]
 
 
 class QuickAndDirtyTableDumper(Output):
     def output(self, world, **kwargs):
+        if not world.cells:
+            return np.zeros(0)
+
         first_cell = world.cells[0]
+        list_lens = [
+            {
+                key: len(value)
+                for key, value in celldict.items()
+                if isinstance(value, list)
+            }
+            for celldict in (cell.__dict__ for cell in world.cells)
+        ]
+
+        list_max_lens = {
+            key: max([list_len[key] for list_len in list_lens])
+            for key in list_lens[0].keys()
+        }
+
+        dtype = prepare_numpy_dtype(first_cell.__dict__, list_max_lens=list_max_lens)
+
         cell_count = len(world.cells)
 
-        dtype = prepare_numpy_dtype(first_cell.__dict__)
         array = np.zeros((cell_count,), dtype=dtype).view(np.recarray)
 
         for n in range(cell_count):
@@ -48,5 +85,20 @@ class QuickAndDirtyTableDumper(Output):
 
         return array
 
-    def write(self, world, file_name, time=None, **kwargs):
-        np.savez(file_name, time=time, cells=self.output(world))
+    def write(
+        self, world, file_name, time=None, overwrite=False, output_count=0, **kwargs
+    ):
+        np.savez(
+            check_overwrite(
+                ensure_path_and_extension_and_number(file_name, '.npz', output_count),
+                overwrite=overwrite,
+            ),
+            time=time,
+            cells=self.output(world),
+        )
+
+
+__all__ = [
+    'JsonPickleSerializer',
+    'QuickAndDirtyTableDumper',
+]

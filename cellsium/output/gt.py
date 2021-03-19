@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from tunable import Tunable
 
-from . import Output
+from . import Output, OutputReproducibleFiles
 from .render import (
     PlainRenderer,
     RenderChannels,
@@ -181,7 +181,7 @@ class YOLOOutput(GroundTruthOutput):
             world = remove_outside_cells(world, shape)
 
         for channel in self.channels:
-            channel.write(world, str(image_file))
+            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
             break  # only one channel supported
 
         lines = []
@@ -274,7 +274,10 @@ class COCOOutput(GroundTruthOutput):
 
     @staticmethod
     def now():
-        return str(datetime.now()).split('.')[0]
+        if OutputReproducibleFiles.value:
+            return '1970-01-01 00:00:00'
+        else:
+            return str(datetime.now()).split('.')[0]
 
     def __del__(self):
         if self.annotation_file:
@@ -319,7 +322,7 @@ class COCOOutput(GroundTruthOutput):
             world = remove_outside_cells(world, shape)
 
         for channel in self.channels:
-            channel.write(world, str(image_file))
+            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
             break  # only one channel supported
 
         self.coco_structure['images'].append(
@@ -384,6 +387,7 @@ class COCOOutput(GroundTruthOutput):
                 GenericMaskOutput.generate_cells_mask(
                     cells_coords, cell_value=class_, binary=True
                 ),
+                overwrite=overwrite,
             )
 
 
@@ -446,7 +450,7 @@ class GenericMaskOutput(GroundTruthOutput):
             world = remove_outside_cells(world, shape)
 
         for channel in self.channels:
-            channel.write(world, str(image_file))
+            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
             break  # only one channel supported
 
         cell_bboxes = [get_bbox_for_cell(cell, shape) for cell in world.cells]
@@ -464,4 +468,11 @@ class GenericMaskOutput(GroundTruthOutput):
             binary=MaskOutputBinary.value,
         )
 
-        self.imwrite(mask_file, mask)
+        self.imwrite(mask_file, mask, overwrite=overwrite)
+
+
+__all__ = [
+    'YOLOOutput',
+    'COCOOutput',
+    'GenericMaskOutput',
+]

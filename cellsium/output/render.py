@@ -1,8 +1,11 @@
+import os
+from pathlib import Path
+
 import cv2
 import numpy as np
 from matplotlib import pyplot
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
+from matplotlib.patches import PathPatch as MatplotlibPathPatch
+from matplotlib.path import Path as MatplotlibPath
 from roifile import ImagejRoi
 from scipy.interpolate import interp1d
 from scipy.ndimage.interpolation import rotate
@@ -12,7 +15,12 @@ from tunable import Tunable
 from ..model import WithFluorescence
 from ..parameters import Height, Width, um_to_pixel
 from ..random import RRF
-from . import Output
+from . import (
+    Output,
+    check_overwrite,
+    ensure_path_and_extension,
+    ensure_path_and_extension_and_number,
+)
 from .plot import MicrometerPerCm
 
 
@@ -86,16 +94,16 @@ class OpenCVimshow(Tunable):
 
 
 def prepare_patch(coordinates, **kwargs):
-    actions = [Path.MOVETO] + [Path.LINETO] * (len(coordinates) - 1)
+    actions = [MatplotlibPath.MOVETO] + [MatplotlibPath.LINETO] * (len(coordinates) - 1)
 
     if 'closed' in kwargs:
         if kwargs['closed']:
-            actions.append(Path.CLOSEPOLY)
+            actions.append(MatplotlibPath.CLOSEPOLY)
 
             coordinates = np.r_[coordinates, [[0, 0]]]
         del kwargs['closed']
 
-    patch = PathPatch(Path(coordinates, actions), **kwargs)
+    patch = MatplotlibPathPatch(MatplotlibPath(coordinates, actions), **kwargs)
     return patch
 
 
@@ -211,6 +219,30 @@ def get_canvas_points_for_cell(cell, image_height=None):
     return points
 
 
+def cv2_has_write_support(extension):
+    try:
+        # Suppress a warning, apparently in some old JPEG2000 reading code there were security vulnerabilities
+        # Since we only want to write here, it should be fine.
+        os.environ['OPENCV_IO_ENABLE_JASPER'] = '1'
+        return cv2.haveImageWriter(extension)
+    except cv2.error:  # why does this function throw errors? just return True or False ...
+        return False
+
+
+OpenCV_Acceptable_Write_Extensions = [
+    extension
+    for extension in (
+        '.bmp,.dib,.jpeg,.jpg,.jpe,.jp2,.png,.webp,.pbm,.pgm,'
+        '.ppm,.pxm,.pnm,.pfm,.sr,.ras,.tiff,.tif,.exr,.hdr,.pic'
+    ).split(',')
+    if cv2_has_write_support(extension)
+]
+
+if '.png' in OpenCV_Acceptable_Write_Extensions:
+    OpenCV_Acceptable_Write_Extensions.remove('.png')
+    OpenCV_Acceptable_Write_Extensions = ['.png'] + OpenCV_Acceptable_Write_Extensions
+
+
 class PlainRenderer(Output):
 
     write_debug_output = False
@@ -224,14 +256,24 @@ class PlainRenderer(Output):
         return new_canvas()
 
     @staticmethod
-    def imwrite(name, img):
-        return cv2.imwrite(str(name), img)
+    def imwrite(name, img, overwrite=False, output_count=None):
+        name = check_overwrite(
+            ensure_path_and_extension_and_number(
+                name,
+                OpenCV_Acceptable_Write_Extensions,
+                output_count,
+                disable_individual=not output_count,
+            ),
+            overwrite=overwrite,
+        )
+
+        return cv2.imwrite(name, img)
 
     def debug_output(self, name, array):
         if not self.write_debug_output:
             return
 
-        self.imwrite('render-%s.png' % (name,), bytescale(array))
+        self.imwrite('render-%s.png' % (name,), bytescale(array), overwrite=True)
 
     @staticmethod
     def render_cells(canvas, array_of_points, fast=False):
@@ -258,8 +300,13 @@ class PlainRenderer(Output):
     def convert(image, max_value=255):
         return (np.clip(image, 0, 1) * max_value).astype(np.uint8)
 
-    def write(self, world, file_name, **kwargs):
-        self.imwrite(file_name, self.convert(self.output(world)))
+    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+        self.imwrite(
+            file_name,
+            self.convert(self.output(world)),
+            overwrite=overwrite,
+            output_count=output_count,
+        )
 
     def display(self, world, **kwargs):
 
@@ -592,13 +639,16 @@ class TiffOutput(Output):
         self.channels = RenderChannels.instantiate()
         self.images = []
         self.current = -1
-        self.writer = None
+        self.file_name = None
         self.rois = []
 
     def output(self, world, **kwargs):
         return [c.output(world) for c in self.channels]
 
     def __del__(self):
+        if not self.images:
+            return
+
         stack = []
         for stacklet in self.images:
             stacklet = np.concatenate([image[np.newaxis] for image in stacklet], axis=0)
@@ -618,18 +668,18 @@ class TiffOutput(Output):
 
         binary_rois = [ImagejRoi.frompoints(**roi).tobytes() for roi in self.rois]
 
-        self.writer.save(
-            result,
-            resolution=(um_to_pixel(1.0), um_to_pixel(1.0)),
-            metadata=dict(unit='um'),
-            ijmetadata=dict(Overlays=binary_rois),
-        )
+        with TiffWriter(
+            ensure_path_and_extension(self.file_name, '.tif'), imagej=True
+        ) as writer:
+            writer.save(
+                result,
+                resolution=(um_to_pixel(1.0), um_to_pixel(1.0)),
+                metadata=dict(unit='um'),
+                ijmetadata=dict(Overlays=binary_rois),
+            )
 
     def write(self, world, file_name, **kwargs):
-        if not file_name.endswith('.tif'):
-            file_name += '.tif'
-        if self.writer is None:
-            self.writer = TiffWriter(file_name, imagej=True)
+        self.file_name = file_name
 
         self.current += 1
 
@@ -637,10 +687,24 @@ class TiffOutput(Output):
 
         self.images.append(stacklet)
 
-        for cell in world.cells:
+        for idx, cell in enumerate(world.cells):
             points = get_canvas_points_for_cell(cell, image_height=stacklet[0].shape[0])
 
             if len(self.channels) > 1:
-                self.rois.append(dict(points=points, t=self.current, position=-1))
+                self.rois.append(
+                    dict(points=points, t=self.current, position=-1, index=idx)
+                )
             else:
-                self.rois.append(dict(points=points, t=-1, position=self.current))
+                self.rois.append(
+                    dict(points=points, t=-1, position=self.current, index=idx)
+                )
+
+
+__all__ = [
+    'PlainRenderer',
+    'FluorescenceRenderer',
+    'PhaseContrastRenderer',
+    'UnevenIlluminationPhaseContrast',
+    'NoisyUnevenIlluminationPhaseContrast',
+    'TiffOutput',
+]

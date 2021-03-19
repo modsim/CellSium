@@ -1,8 +1,13 @@
 import numpy as np
-from stl import mesh
+from stl import Mesh, stl
 from tunable import Tunable
 
-from . import Output
+from . import (
+    Output,
+    OutputReproducibleFiles,
+    check_overwrite,
+    ensure_path_and_extension_and_number,
+)
 
 
 class MeshCellScaleFactor(Tunable):
@@ -40,26 +45,40 @@ class MeshOutput(Output):
 
         return meshes
 
-    def write(self, world, file_name, **kwargs):
+    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
         meshes = self.output(world)
 
         stl_meshes = []
 
         for single_mesh in meshes:
             vertices, triangles = single_mesh['vertices'], single_mesh['triangles']
-            data = mesh.Mesh(np.zeros(len(triangles), dtype=mesh.Mesh.dtype))
+            data = Mesh(np.zeros(len(triangles), dtype=Mesh.dtype))
             for i, tri in enumerate(triangles):
                 data.vectors[i, :] = vertices[tri, :]
 
             stl_meshes.append(data)
 
-        result_mesh = mesh.Mesh(
+        result_mesh = Mesh(
             np.concatenate([single_mesh.data for single_mesh in stl_meshes])
+            if stl_meshes
+            else np.zeros(0, dtype=Mesh.dtype)
         )
-        result_mesh.save(file_name)
+
+        if OutputReproducibleFiles.value:
+            stl.HEADER_FORMAT = '{package_name} ({version})'
+
+        result_mesh.save(
+            check_overwrite(
+                ensure_path_and_extension_and_number(file_name, '.stl', output_count),
+                overwrite=overwrite,
+            )
+        )
 
     def display(self, world, **kwargs):
         # ax = fig.add_subplot(111, projection='3d')
         # ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2])
         # ax.set_aspect('equal', 'datalim')
         raise RuntimeError('Unsupported')
+
+
+__all__ = ['MeshOutput']
