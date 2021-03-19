@@ -31,29 +31,39 @@ class RandomWidthLength:
         assert NewCellLength1Mean.value > NewCellWidthMean.value
         assert NewCellLength2Mean.value > NewCellWidthMean.value
 
+        def ensure_length_greater_width(length, width):
+            for inner_length, inner_width in zip(length, width):
+                if inner_length > inner_width:
+                    yield [inner_length, inner_width]
+
         return dict(
-            length=RRF.compose(
-                lambda raw_lengths, choice: raw_lengths[choice],
-                raw_lengths=RRF.chain(
-                    enforce_bounds,
-                    iterator=sequence.multivariate_normal(
-                        [NewCellLength1Mean.value, NewCellLength2Mean.value],
-                        [
-                            [NewCellLength1Std.value, 0.0],
-                            [0.0, NewCellLength2Std.value],
-                        ],
+            length__width=RRF.chain(
+                ensure_length_greater_width,
+                length=RRF.compose(
+                    lambda raw_lengths, choice: raw_lengths[choice],
+                    raw_lengths=RRF.chain(
+                        enforce_bounds,
+                        iterator=sequence.multivariate_normal(
+                            [NewCellLength1Mean.value, NewCellLength2Mean.value],
+                            [
+                                [NewCellLength1Std.value, 0.0],
+                                [0.0, NewCellLength2Std.value],
+                            ],
+                        ),
+                        minimum=NewCellLengthAbsoluteMin.value,
+                        maximum=NewCellLengthAbsoluteMax.value,
                     ),
-                    minimum=NewCellLengthAbsoluteMin.value,
-                    maximum=NewCellLengthAbsoluteMax.value,
+                    choice=sequence.integers(0, 1),
                 ),
-                choice=sequence.integers(0, 1),
-            ),
-            width=RRF.chain(
-                enforce_bounds,
-                iterator=sequence.normal(NewCellWidthMean.value, NewCellWidthStd.value),
-                minimum=NewCellWidthAbsoluteMin.value,
-                maximum=NewCellWidthAbsoluteMax.value,
-            ),
+                width=RRF.chain(
+                    enforce_bounds,
+                    iterator=sequence.normal(
+                        NewCellWidthMean.value, NewCellWidthStd.value
+                    ),
+                    minimum=NewCellWidthAbsoluteMin.value,
+                    maximum=NewCellWidthAbsoluteMax.value,
+                ),
+            )
         )
 
 
