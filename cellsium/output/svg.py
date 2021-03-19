@@ -4,12 +4,7 @@ import xml.etree.ElementTree as ET
 from tunable import Tunable
 
 from ..parameters import Height, Width
-from . import (
-    Output,
-    check_overwrite,
-    ensure_path_and_extension,
-    ensure_path_and_extension_and_number,
-)
+from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class MicrometerPerCm(Tunable):
