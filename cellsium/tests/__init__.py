@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 """
-The test module's __main__ contains the main() function to run the doctests.
+The tests modules contains a doctests launcher.
 """
 
 import doctest
-import sys
 from types import ModuleType
 
 
@@ -25,39 +23,32 @@ def collect_modules_recursive(start, blacklist=None):
     collector = set()
 
     def _inner(current):
+        if current in collector or current.__name__ in blacklist:
+            return
+
         collector.add(current)
+
         for another in dir(current):
             another = getattr(current, another)
             if isinstance(another, ModuleType):
                 if another.__name__.startswith(start.__name__):
-
-                    ok = True
-                    for blacklisted in blacklist:
-                        if blacklisted in another.__name__:
-                            ok = False
-
-                    if ok:
-                        _inner(another)
+                    _inner(another)
 
     _inner(start)
 
     return list(sorted(collector, key=lambda module: module.__name__))
 
 
-def run_tests_recursively(
-    start_module, blacklist=None, exit_afterwards=True, quiet=False
-):
+def run_tests_recursively(start_module, blacklist=None, quiet=False):
     """
     Runs doctests recursively.
 
     :param start_module: the top module to start from
     :param blacklist: a string or list of strings of module (sub)names which should be ignored.
-    :param exit_afterwards: whether to exit with return code
     :param quiet: whether to print infos about tests
     :return:
     """
     total_failures, total_tests = 0, 0
-
     for a_module in collect_modules_recursive(start_module, blacklist):
         failures, tests = doctest.testmod(a_module)
         total_failures += failures
@@ -70,12 +61,11 @@ def run_tests_recursively(
         if not quiet:
             print("Test failures occurred, exiting with non-zero status.")
 
-        if exit_afterwards:
-            sys.exit(1)
+    return total_failures
 
 
 # noinspection PyUnresolvedReferences
-def main():
+def run_doctests(quiet=False):
     """
     Runs all the doctests.
 
@@ -94,13 +84,12 @@ def main():
     import cellsium.random
     import cellsium.simulation
     import cellsium.simulation.placement.base
-
-    # import cellsium.simulation.placement.pybox2d
+    import cellsium.simulation.placement.pybox2d
     import cellsium.simulation.placement.pymunk
     import cellsium.simulation.simulator
 
-    run_tests_recursively(cellsium)
+    return run_tests_recursively(cellsium, quiet=quiet)
 
 
-if __name__ == '__main__':
-    main()
+def main():
+    return run_doctests()
