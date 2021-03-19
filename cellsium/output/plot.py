@@ -48,7 +48,7 @@ class PlotRenderer(Output, Output.Default):
 
         return fig, ax
 
-    def write(self, world, file_name, output_number=0, overwrite=False, **kwargs):
+    def write(self, world, file_name, output_count=0, overwrite=False, **kwargs):
         fig, ax = self.output(world)
 
         extensions = ['.png'] + [
@@ -60,7 +60,7 @@ class PlotRenderer(Output, Output.Default):
         fig.savefig(
             check_overwrite(
                 ensure_path_and_extension_and_number(
-                    file_name, extensions, output_number
+                    file_name, extensions, output_count
                 ),
                 overwrite=overwrite,
             )

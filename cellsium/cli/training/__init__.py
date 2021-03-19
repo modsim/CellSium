@@ -58,6 +58,8 @@ def subcommand_main(args):
         for output in outputs:
             if args.prefix:
                 output_name = add_output_prefix(args.output, output=output)
+            else:
+                output_name = args.output
 
             output.write(
                 simulator.simulation.world,
