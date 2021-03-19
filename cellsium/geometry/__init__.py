@@ -6,7 +6,7 @@ def line(start, stop, interval=0.1, minimum_times=10, times=None):
     delta = stop - start
 
     if times is None:
-        times = max(int(np.linalg.norm(delta) / interval), minimum_times)
+        times = max(int(np.linalg.norm(delta) / interval) + 1, minimum_times)
 
     ramp = np.linspace(0.0, 1.0, times)
     ramp = np.c_[ramp, ramp]
