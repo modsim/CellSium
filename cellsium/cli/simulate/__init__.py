@@ -30,10 +30,14 @@ class BoundariesFile(Tunable):
     default = ""
 
 
+class BoundariesScaleFactor(Tunable):
+    default = 1.0
+
+
 log = logging.getLogger(__name__)
 
 
-def add_boundaries_from_dxf(file_name, simulator):
+def add_boundaries_from_dxf(file_name, simulator, scale_factor=1.0):
     import ezdxf
 
     dxf = ezdxf.readfile(file_name)
@@ -42,20 +46,24 @@ def add_boundaries_from_dxf(file_name, simulator):
         points = None
         if item.dxftype() == 'LWPOLYLINE':
             points = np.array(list(item.get_points()))[:, :2]
-            points = points / 32 * 40
         elif item.dxftype() == 'POLYLINE':
-            points = np.array(list(item.points()))
+            points = np.array(list(item.points()))[:, :2]
         else:
-            print("Warning, unknown type", item.dxftype())
+            log.warning("Warning, unknown type: %r", item.dxftype())
 
-        simulator.add_boundary(points)
+        if points is not None:
+            points *= scale_factor
+
+            simulator.add_boundary(points)
 
 
 def subcommand_main(args):
     simulator = initialize_simulator()
 
     if BoundariesFile.value != '':
-        add_boundaries_from_dxf(BoundariesFile.value, simulator)
+        add_boundaries_from_dxf(
+            BoundariesFile.value, simulator, scale_factor=BoundariesScaleFactor.value
+        )
 
     initialize_cells(simulator, count=NewCellCount.value)
 
