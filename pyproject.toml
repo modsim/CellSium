@@ -44,3 +44,13 @@ skip-string-normalization = 1
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov=cellsium -vv --durations=0"
+
+[tool.flake8]
+max-line-length = 88
+exclude = "local"
+extend-ignore = "E203,"
+max-complexity = 10
