@@ -32,7 +32,8 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
             )
 
     def add(self, cell):
-        # Box2D only allows for 16 vertices per body, and the current implementation would vastly exceed that
+        # Box2D only allows for 16 vertices per body,
+        # and the current implementation would vastly exceed that
         # hence only simplifications
         assert PlacementSimulationSimplification.value != 0
 

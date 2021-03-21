@@ -52,9 +52,6 @@ def type2numpy(value, max_len=None):
         raise RuntimeError('...')
 
 
-# dir(C);val = getattr(C, k);if k.startswith('__') or hasattr(val, '__call__') or hasattr(val, '__next__'):
-
-
 def prepare_numpy_dtype(inner, list_max_lens=None):
     return [
         (

@@ -11,7 +11,8 @@ def collect_modules_recursive(start, blacklist=None):
     Collects all modules and submodules in a recursive manner.
 
     :param start: the top module to start from
-    :param blacklist: a string or list of strings of module (sub)names which should be ignored.
+    :param blacklist: a string or list of strings of module
+        (sub)names which should be ignored.
     :return:
     """
 
@@ -44,7 +45,8 @@ def run_tests_recursively(start_module, blacklist=None, quiet=False):
     Runs doctests recursively.
 
     :param start_module: the top module to start from
-    :param blacklist: a string or list of strings of module (sub)names which should be ignored.
+    :param blacklist: a string or list of strings of module
+        (sub)names which should be ignored.
     :param quiet: whether to print infos about tests
     :return:
     """

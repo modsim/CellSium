@@ -115,66 +115,76 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
         _ = last
 
     def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
-        converging = False
 
         first_positions = self._get_positions()[:, :2]
 
-        look_back = 0
-
-        convergence_check = self.convergence_check_interval
-
         if converge:
-            before_positions = first_positions.copy()
-
-            for _ in range(iterations):
-                self.space.step(time_step)
-
-                convergence_check -= 1
-
-                if convergence_check > 0:
-                    continue
-
-                convergence_check = self.convergence_check_interval
-
-                after_positions = self._get_positions()[:, :2]
-
-                dist = (
-                    self._mean_distance(before_positions, after_positions)
-                    * time_step
-                    * self.convergence_check_interval
-                )
-
-                before_positions[:] = after_positions
-
-                if dist < epsilon:
-                    look_back += 1
-                else:
-                    look_back = 0
-
-                if look_back > self.look_back_threshold:
-                    if self.verbose:
-                        print("Stopping due to look back threshold.")
-                    break
-
-                if self.verbose:
-                    print(_, dist, look_back)
-
-                if not converging:
-                    if dist > 0:
-                        converging = True
-                else:
-                    if dist < epsilon:
-                        break
-
-                before_positions[:] = after_positions
+            self._inner_step_step_attempt_converge(
+                epsilon, first_positions, iterations, time_step
+            )
         else:
-            for _ in range(iterations):
-                self.space.step(time_step)
+            self._inner_step_step_ignore_converge(iterations, time_step)
 
         after_positions = self._get_positions()[:, :2]
 
+        self._inner_step_update_positions()
+
+        return self._total_distance(first_positions, after_positions)
+
+    def _inner_step_update_positions(self):
         for cell, body in self.cell_bodies.items():
             cell.position = [body.position[0], body.position[1]]
             cell.angle = body.angle
 
-        return self._total_distance(first_positions, after_positions)
+    def _inner_step_step_ignore_converge(self, iterations, time_step):
+        for _ in range(iterations):
+            self.space.step(time_step)
+
+    def _inner_step_step_attempt_converge(
+        self, epsilon, first_positions, iterations, time_step
+    ):
+        converging = False
+        look_back = 0
+        convergence_check = self.convergence_check_interval
+        before_positions = first_positions.copy()
+        for _ in range(iterations):
+            self.space.step(time_step)
+
+            convergence_check -= 1
+
+            if convergence_check > 0:
+                continue
+
+            convergence_check = self.convergence_check_interval
+
+            after_positions = self._get_positions()[:, :2]
+
+            dist = (
+                self._mean_distance(before_positions, after_positions)
+                * time_step
+                * self.convergence_check_interval
+            )
+
+            before_positions[:] = after_positions
+
+            if dist < epsilon:
+                look_back += 1
+            else:
+                look_back = 0
+
+            if look_back > self.look_back_threshold:
+                if self.verbose:
+                    print("Stopping due to look back threshold.")
+                break
+
+            if self.verbose:
+                print(_, dist, look_back)
+
+            if not converging:
+                if dist > 0:
+                    converging = True
+            else:
+                if dist < epsilon:
+                    break
+
+            before_positions[:] = after_positions

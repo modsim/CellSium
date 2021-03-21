@@ -153,3 +153,15 @@ def rotate_and_mesh(points, steps=16, clean=True, close_ends=True):
         last = base
 
     return all_points, np.array(triangles)
+
+
+__all__ = [
+    'line',
+    'circle_segment',
+    'parabolic_deformation',
+    'rotate',
+    'shift',
+    'add_empty_third_dimension',
+    'rotate3d',
+    'rotate_and_mesh',
+]

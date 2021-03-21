@@ -4,8 +4,11 @@ import sys
 
 from tunable import TunableSelectable
 
+from ..output import all as output_all
 from ..random import RRF
 from . import render, simulate, training
+
+_ = output_all
 
 log = logging.getLogger(__name__)
 

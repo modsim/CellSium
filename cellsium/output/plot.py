@@ -1,3 +1,5 @@
+import warnings
+
 from matplotlib import pyplot
 from tunable import Tunable
 
@@ -43,8 +45,9 @@ class PlotRenderer(Output, Output.Default):
 
         ax.set_xlim(0, Width.value)
         ax.set_ylim(0, Height.value)
-
-        pyplot.tight_layout()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            pyplot.tight_layout()
 
         return fig, ax
 
@@ -67,6 +70,10 @@ class PlotRenderer(Output, Output.Default):
         )
 
     def display(self, world, **kwargs):
+        if self.fig:
+            if not pyplot.fignum_exists(self.fig.number):
+                raise KeyboardInterrupt
+
         pyplot.ion()
         self.output(world)
         pyplot.show()

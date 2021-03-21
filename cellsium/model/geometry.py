@@ -2,7 +2,16 @@ from math import cos, sin
 
 import numpy as np
 
-from ..geometry import *
+from ..geometry import (
+    add_empty_third_dimension,
+    circle_segment,
+    line,
+    parabolic_deformation,
+    rotate,
+    rotate3d,
+    rotate_and_mesh,
+    shift,
+)
 
 
 class Shape:
@@ -256,3 +265,21 @@ class AutoMesh3D(Shape3D):
 class CellGeometry(WithAngle, WithPosition, AutoMesh3D):
     def points_on_canvas(self):
         return shift(rotate(self.raw_points(), self.angle), self.position)
+
+
+__all__ = [
+    'Shape',
+    'Shape3D',
+    'RodShaped',
+    'Rectangle',
+    'Square',
+    'BentRod',
+    'Coccoid',
+    'Ellipsoid',
+    'WithPosition',
+    'WithAngle',
+    'WithFluorescence',
+    'WithProperDivisionBehavior',
+    'AutoMesh3D',
+    'CellGeometry',
+]

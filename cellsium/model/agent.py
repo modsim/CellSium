@@ -64,7 +64,7 @@ class WithRandomSequences:
         return _Proxy(self.get_random_sequences())
 
 
-class Copyable(object):
+class Copyable:
     def copy(self):
         return deepcopy(self)
 
@@ -117,3 +117,15 @@ class WithTemporalLineage:
     @staticmethod
     def defaults():
         return dict(birth_time=0.0)
+
+
+__all__ = [
+    'InitializeWithParameters',
+    'WithRandomSequences',
+    'Copyable',
+    'Representable',
+    'IdCounter',
+    'WithLineage',
+    'WithLineageHistory',
+    'WithTemporalLineage',
+]

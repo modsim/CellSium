@@ -1,6 +1,6 @@
 import jsonpickle
 
-from ...output.all import *
+from ...output import Output
 
 
 def subcommand_argparser(parser):

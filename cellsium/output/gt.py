@@ -88,6 +88,15 @@ def is_completely_within(bbox):
     )
 
 
+def possibly_remove_outside_cells(world, shape):
+    if (
+        GroundTruthOnlyCompleteCells.value
+        and GroundTruthOnlyCompleteCellsInImages.value
+    ):
+        world = remove_outside_cells(world, shape)
+    return world
+
+
 def remove_outside_cells(world, shape):
     world = world.copy()
 
@@ -147,17 +156,31 @@ class GroundTruthOutput(Output, Output.Virtual):
     def output(self, world, **kwargs):
         raise RuntimeError("GroundTruthOutput s only support writing.")
 
+    def _write_channels(self, world, filenames, overwrite=True):
+        for image_file, channel in zip(filenames, self.channels):
+            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
+            break  # only one channel supported
 
-class YOLOOutput(GroundTruthOutput):
+    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
+        pass
+
+    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+        pass
+
     def write(self, world, file_name, overwrite=False, **kwargs):
-        shape = self.canvas_shape
-        digits = self.significant_digits
-
         self.current += 1
 
+        if self.current == 0:
+            self._write_initializations(world, file_name, overwrite=overwrite)
+
+        return self._write_perform(world, file_name, overwrite=overwrite)
+
+
+class YOLOOutput(GroundTruthOutput):
+    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
         base_path = Path(file_name)
-        image_path = base_path  # / 'images'
-        label_path = base_path  # / 'labels'
+        self.image_path = base_path  # / 'images'
+        self.label_path = base_path  # / 'labels'
 
         if self.current == 0:
             # some initializations
@@ -165,24 +188,22 @@ class YOLOOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            mkdirs(base_path, image_path, label_path)
+            mkdirs(base_path, self.image_path, self.label_path)
 
             (base_path / 'classes.txt').write_text("cell\n")
 
+    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+        shape = self.canvas_shape
+        digits = self.significant_digits
+
         token = '%012d' % self.current
 
-        image_file = image_path / (token + '.png')
-        text_file = label_path / (token + '.txt')
+        image_file = self.image_path / (token + '.png')
+        text_file = self.label_path / (token + '.txt')
 
-        if (
-            GroundTruthOnlyCompleteCells.value
-            and GroundTruthOnlyCompleteCellsInImages.value
-        ):
-            world = remove_outside_cells(world, shape)
+        world = possibly_remove_outside_cells(world, shape)
 
-        for channel in self.channels:
-            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
-            break  # only one channel supported
+        self._write_channels(world, [image_file], overwrite=overwrite)
 
         lines = []
 
@@ -225,6 +246,14 @@ def binary_to_rle(mask):
     return lens
 
 
+def convert_points_to_rle(points):
+    mask = PlainRenderer.new_canvas()
+    mask = PlainRenderer.render_cells(mask, [points], fast=True)
+    mask = mask > 0.5
+    lens = binary_to_rle(mask)
+    return lens
+
+
 class COCOEncodeRLE(Tunable):
     """ Whether to encode segmentation data as RLE format. """
 
@@ -243,11 +272,12 @@ class COCOOutput(GroundTruthOutput):
 
         self.annotation_file = None
 
+        # Maybe add parameters to modify metadata ?
         self.coco_structure = {
             'info': {
                 'year': datetime.now().year,
                 'version': '1.0',
-                'description': "Dataset generated with CellSium",  # TODO: Add parameters?
+                'description': "Dataset generated with CellSium",
                 'contributor': "CellSium User",
                 'url': 'https://github.com/modsim/cellsium',
                 'date_created': self.now(),
@@ -284,20 +314,14 @@ class COCOOutput(GroundTruthOutput):
             with self.annotation_file.open('w+') as fp:
                 json.dump(self.coco_structure, fp, indent=' ' * 4)
 
-    def write(self, world, file_name, overwrite=False, **kwargs):
-        shape = self.canvas_shape
-        digits = self.significant_digits
-        write_stuff = COCOOutputStuff.value
-
-        self.current += 1
-
+    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
         base_path = Path(file_name)
-        image_path = base_path / 'train'
+        self.image_path = base_path / 'train'
 
-        stuff_path = None
+        self.stuff_path = None
 
         if COCOOutputStuff.value:
-            stuff_path = base_path / 'stuffthings'
+            self.stuff_path = base_path / 'stuffthings'
 
         if self.current == 0:
             # some initializations
@@ -305,25 +329,24 @@ class COCOOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            mkdirs(base_path, image_path, stuff_path)
+            mkdirs(base_path, self.image_path, self.stuff_path)
 
             self.annotation_file = base_path / 'annotations.json'
+
+    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+        shape = self.canvas_shape
+        digits = self.significant_digits
+        write_stuff = COCOOutputStuff.value
 
         token = '%012d' % self.current
 
         image_file_name = token + '.png'
 
-        image_file = image_path / image_file_name
+        image_file = self.image_path / image_file_name
 
-        if (
-            GroundTruthOnlyCompleteCells.value
-            and GroundTruthOnlyCompleteCellsInImages.value
-        ):
-            world = remove_outside_cells(world, shape)
+        world = possibly_remove_outside_cells(world, shape)
 
-        for channel in self.channels:
-            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
-            break  # only one channel supported
+        self._write_channels(world, [image_file], overwrite=overwrite)
 
         self.coco_structure['images'].append(
             {
@@ -358,14 +381,10 @@ class COCOOutput(GroundTruthOutput):
                 segmentation = [np.around(bbox.points.ravel(), digits).tolist()]
             else:
                 iscrowd = 1
-
-                mask = PlainRenderer.new_canvas()
-                mask = PlainRenderer.render_cells(mask, [bbox.points], fast=True)
-                mask = mask > 0.5
-
-                lens = binary_to_rle(mask)
-
-                segmentation = {'counts': lens.tolist(), 'size': shape}
+                segmentation = {
+                    'counts': convert_points_to_rle(bbox.points).tolist(),
+                    'size': shape,
+                }
 
             self.coco_structure['annotations'].append(
                 {
@@ -380,7 +399,7 @@ class COCOOutput(GroundTruthOutput):
             )
 
         if write_stuff:
-            stuff_file = stuff_path / image_file_name
+            stuff_file = self.stuff_path / image_file_name
 
             GenericMaskOutput.imwrite(
                 stuff_file,
@@ -421,14 +440,10 @@ class GenericMaskOutput(GroundTruthOutput):
     def imwrite(*args, **kwargs):
         return PlainRenderer.imwrite(*args, **kwargs)
 
-    def write(self, world, file_name, overwrite=False, **kwargs):
-        shape = self.canvas_shape
-
-        self.current += 1
-
+    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
         base_path = Path(file_name)
-        image_path = base_path / 'images'
-        mask_path = base_path / 'masks'
+        self.image_path = base_path / 'images'
+        self.mask_path = base_path / 'masks'
 
         if self.current == 0:
             # some initializations
@@ -436,22 +451,19 @@ class GenericMaskOutput(GroundTruthOutput):
             if not overwrite and base_path.exists():
                 raise RuntimeError(f"Path {base_path} already exists. Not overwriting.")
 
-            mkdirs(base_path, image_path, mask_path)
+            mkdirs(base_path, self.image_path, self.mask_path)
+
+    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+        shape = self.canvas_shape
 
         token = '%012d' % self.current
 
-        image_file = image_path / (token + '.png')
-        mask_file = mask_path / (token + '.png')
+        image_file = self.image_path / (token + '.png')
+        mask_file = self.mask_path / (token + '.png')
 
-        if (
-            GroundTruthOnlyCompleteCells.value
-            and GroundTruthOnlyCompleteCellsInImages.value
-        ):
-            world = remove_outside_cells(world, shape)
+        world = possibly_remove_outside_cells(world, shape)
 
-        for channel in self.channels:
-            channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
-            break  # only one channel supported
+        self._write_channels(world, [image_file], overwrite=overwrite)
 
         cell_bboxes = [get_bbox_for_cell(cell, shape) for cell in world.cells]
 

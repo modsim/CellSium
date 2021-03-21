@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+import warnings
 
 import cv2
 import numpy as np
@@ -29,7 +29,10 @@ def bytescale(image):
         return image
 
     low, high = image.min(), image.max()
-    return (255 * ((image - low) / (high - low))).astype(np.uint8)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        return (255 * ((image - low) / (high - low))).astype(np.uint8)
 
 
 def noise_attempt(times=5, m=10, n=512, r=None):
@@ -221,11 +224,13 @@ def get_canvas_points_for_cell(cell, image_height=None):
 
 def cv2_has_write_support(extension):
     try:
-        # Suppress a warning, apparently in some old JPEG2000 reading code there were security vulnerabilities
+        # Suppress a warning, apparently in some old JPEG2000
+        # reading code there were security vulnerabilities
         # Since we only want to write here, it should be fine.
         os.environ['OPENCV_IO_ENABLE_JASPER'] = '1'
         return cv2.haveImageWriter(extension)
-    except cv2.error:  # why does this function throw errors? just return True or False ...
+    except cv2.error:
+        # why does this function throw errors? just return True or False ...
         return False
 
 
@@ -337,7 +342,10 @@ class PlainRenderer(Output):
                 self.ax.clear()
                 self.imshow_data = self.ax.imshow(image, cmap='gray')
 
-                pyplot.tight_layout()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    pyplot.tight_layout()
+
                 pyplot.show()
 
             self.fig.canvas.draw()
@@ -424,7 +432,8 @@ class FluorescenceRenderer(PlainRenderer):
             pts = points[np.newaxis].astype(np.int32)
 
             # Skip cells which (partly) lie outside of the image
-            # TODO proper handling, so that parts of cells poking into the image are still properly handled
+            # TODO proper handling, so that parts of cells
+            #  poking into the image are still properly handled
             if (points[:, 0].min() < 0 or points[:, 0].max() > canvas.shape[1]) or (
                 points[:, 1].min() < 0 or points[:, 1].max() > canvas.shape[0]
             ):

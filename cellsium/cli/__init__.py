@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..model import *
+from ..model import PlacedCell, SizerCell
 from ..simulation.placement import PlacementSimulation
 from ..simulation.simulator import Simulator
 
@@ -31,7 +31,8 @@ def initialize_cells(simulator, count=0, cell_type=None, sequence=None):
 
         init_kwargs = {k: next(v) for k, v in random_sequences.items()}
 
-        # handling for items which are generated jointly, but need to go to separate kwargs
+        # handling for items which are generated jointly,
+        # but need to go to separate kwargs
         for k, v in list(init_kwargs.items()):
             if '__' in k:
                 del init_kwargs[k]

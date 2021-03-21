@@ -57,6 +57,44 @@ def add_boundaries_from_dxf(file_name, simulator, scale_factor=1.0):
             simulator.add_boundary(points)
 
 
+def prepare_output_name(output_name, output, prefix):
+    if prefix:
+        output_name = add_output_prefix(output_name, output=output)
+    return output_name
+
+
+def perform_outputs(
+    world,
+    simulation_time,
+    outputs,
+    output_name=None,
+    overwrite=False,
+    prefix=False,
+    output_count=0,
+):
+    log.debug("Outputting simulation state at %.2f h" % (s_to_h(simulation_time),))
+    for output in outputs:
+        output_before = time()
+
+        if output_name:
+            output.write(
+                world,
+                prepare_output_name(output_name, output, prefix),
+                time=simulation_time,
+                output_count=output_count,
+                overwrite=overwrite,
+            )
+        else:
+            output.display(world)
+
+        output_after = time()
+
+        log.debug(
+            "Output %s took %.2fs"
+            % (output.__class__.__name__, output_after - output_before)
+        )
+
+
 def subcommand_main(args):
     simulator = initialize_simulator()
 
@@ -79,23 +117,27 @@ def subcommand_main(args):
     total_before = time()
 
     time_step = h_to_s(SimulationTimestep.value)
+    duration = (
+        h_to_s(SimulationDuration.value)
+        if SimulationDuration.value > 0
+        else float('inf')
+    )
+    output_interval = h_to_s(SimulationOutputInterval.value)
 
     output_count = 0
 
-    if SimulationDuration.value < 0:
+    if duration == float('inf'):
         log.info("Simulation running in infinite mode ... press Ctrl-C to abort.")
 
     interrupted = False
     try:
-        while (
-            simulation_time < h_to_s(SimulationDuration.value)
-            or SimulationDuration.value < 0
-        ):
+        while simulation_time < duration:
+
             before = time()
 
             simulator.step(time_step)
-
             simulation_time += time_step
+
             after = time()
 
             log.info(
@@ -103,43 +145,22 @@ def subcommand_main(args):
                 % (after - before, s_to_h(simulation_time))
             )
 
-            if SimulationOutputInterval.value > 0:
-                if (simulation_time - last_output) >= h_to_s(
-                    SimulationOutputInterval.value
-                ):
-                    last_output = simulation_time
+            if (simulation_time - last_output) >= output_interval > 0:
 
-                    log.debug(
-                        "Outputting simulation state at %.2f h"
-                        % (s_to_h(simulation_time),)
-                    )
+                last_output = simulation_time
 
-                    for output in outputs:
-                        output_before = time()
-                        if args.output:
-                            if args.prefix:
-                                output_name = add_output_prefix(
-                                    args.output, output=output
-                                )
-                            else:
-                                output_name = args.output
-                            output.write(
-                                simulator.simulation.world,
-                                output_name,
-                                time=simulation_time,
-                                output_count=output_count,
-                                overwrite=args.overwrite,
-                            )
-                        else:
-                            output.display(simulator.simulation.world)
-                        output_after = time()
+                perform_outputs(
+                    simulator.simulation.world,
+                    simulation_time,
+                    outputs,
+                    args.output,
+                    overwrite=args.overwrite,
+                    prefix=args.prefix,
+                    output_count=output_count,
+                )
 
-                        log.debug(
-                            "Output %s took %.2fs"
-                            % (output.__class__.__name__, output_after - output_before)
-                        )
+                output_count += 1
 
-                    output_count += 1
     except KeyboardInterrupt:
         log.info("Ctrl-C pressed, stopping simulation.")
         interrupted = True

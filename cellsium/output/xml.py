@@ -1,3 +1,5 @@
+# noinspection PyPep8Naming
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from tunable import Tunable
@@ -14,9 +16,6 @@ class TrackMateXMLExportFluorescences(Tunable):
 class TrackMateXMLExportLengthTypo(Tunable):
     default = True
 
-
-# noinspection PyPep8Naming
-import xml.etree.ElementTree as ET
 
 EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <TrackMate version="2.7.3">
@@ -115,7 +114,7 @@ EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
     <View key="HYPERSTACKDISPLAYER" />
   </GUIState>
 </TrackMate>
-"""
+"""  # noqa
 
 
 class TrackMateXML(Output):
@@ -249,7 +248,8 @@ class TrackMateXML(Output):
             spot = ET.SubElement(group, 'Spot')
 
             # history = tuple(cell.lineage_history[::-1])
-            # this will probably not work if more than one division is between xml-write intervals
+            # this will probably not work if more than one division
+            # is between xml-write intervals
 
             if cell in self.tracks:
                 connect(
