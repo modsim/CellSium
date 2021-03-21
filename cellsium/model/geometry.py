@@ -64,7 +64,7 @@ class RodShaped(Shape):
         length = self.length - diameter
         half_length = length / 2.0
 
-        times = 2 * int(length / radius)
+        times = max(1, 2 * int(length / radius))
 
         for x in np.linspace(-half_length, half_length, times):
             yield radius, (x, 0)
@@ -182,6 +182,9 @@ class Coccoid(Shape):
         )
 
         return np.r_[circle_right, circle_left]
+
+    def get_approximation_circles(self):
+        yield self.length / 2, (0.0, 0.0)
 
 
 class Ellipsoid(Coccoid):

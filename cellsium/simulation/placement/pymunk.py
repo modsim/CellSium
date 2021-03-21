@@ -5,6 +5,7 @@ from .base import (
     PhysicalPlacement,
     PlacementSimulation,
     PlacementSimulationSimplification,
+    ensure_python,
 )
 
 try:
@@ -24,6 +25,8 @@ class ChipmunkPlacementRadius(Tunable):
 class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Default):
 
     verbose = False
+    look_back_threshold = 5
+    convergence_check_interval = 15
 
     def __init__(self):
         self.space = pymunk.Space(threaded=False)
@@ -47,7 +50,9 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         for start, stop in zip(coordinates, coordinates[1:]):
             self.boundaries.append([start, stop])
-            segment = pymunk.Segment(boundary_body, start.tolist(), stop.tolist(), 0.0)
+            segment = pymunk.Segment(
+                boundary_body, ensure_python(start), ensure_python(stop), 0.0
+            )
             boundary_segments.append(segment)
 
         self.space.add(boundary_body, *boundary_segments)
@@ -62,7 +67,7 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         if PlacementSimulationSimplification.value == 2:
             shapes = tuple(
-                pymunk.Circle(body, radius, offset=offset)
+                pymunk.Circle(body, float(radius), offset=ensure_python(offset))
                 for radius, offset in cell.get_approximation_circles()
             )
         else:
@@ -70,7 +75,7 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
                 simplify=PlacementSimulationSimplification.value == 1
             )
 
-            poly = pymunk.Poly(body, points.tolist())
+            poly = pymunk.Poly(body, ensure_python(points))
             poly.unsafe_set_radius(ChipmunkPlacementRadius.value)
 
             shapes = (poly,)
@@ -115,9 +120,8 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
         first_positions = self._get_positions()[:, :2]
 
         look_back = 0
-        look_back_threshold = 5
 
-        convergence_check = convergence_check_interval = 15
+        convergence_check = self.convergence_check_interval
 
         if converge:
             before_positions = first_positions.copy()
@@ -130,30 +134,30 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
                 if convergence_check > 0:
                     continue
 
-                convergence_check = convergence_check_interval
+                convergence_check = self.convergence_check_interval
 
                 after_positions = self._get_positions()[:, :2]
 
                 dist = (
                     self._mean_distance(before_positions, after_positions)
                     * time_step
-                    * convergence_check_interval
+                    * self.convergence_check_interval
                 )
 
                 before_positions[:] = after_positions
 
                 if dist < epsilon:
                     look_back += 1
-                    if look_back > look_back_threshold:
-                        break
                 else:
                     look_back = 0
 
-                if look_back > look_back_threshold:
+                if look_back > self.look_back_threshold:
+                    if self.verbose:
+                        print("Stopping due to look back threshold.")
                     break
 
-                if False or self.verbose:
-                    print(_, dist)
+                if self.verbose:
+                    print(_, dist, look_back)
 
                 if not converging:
                     if dist > 0:

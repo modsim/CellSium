@@ -99,7 +99,7 @@ def subcommand_main(args):
             after = time()
 
             log.info(
-                "Timestep took %.2fs, virtual time: %.2f h"
+                "Timestep took %.2fs, simulated time: %.2f h"
                 % (after - before, s_to_h(simulation_time))
             )
 

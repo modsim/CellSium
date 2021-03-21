@@ -9,23 +9,32 @@ from .initialization import (
 )
 
 
-class PlacedCell(
-    WithLineageHistory,
-    WithLineage,
-    WithTemporalLineage,
-    WithProperDivisionBehavior,
-    InitializeWithParameters,
-    Copyable,
-    Representable,
-    WithRandomSequences,
-    RandomWidthLength,
-    RandomBentRod,
-    RandomPosition,
-    RandomAngle,
-    CellGeometry,
-    BentRod,
-):
-    pass
+def generate_cell(*additional_classes, name='PlacedCell'):
+    cell = type(
+        name,
+        (
+            WithLineageHistory,
+            WithLineage,
+            WithTemporalLineage,
+            WithProperDivisionBehavior,
+            InitializeWithParameters,
+            Copyable,
+            Representable,
+            WithRandomSequences,
+            RandomWidthLength,
+            RandomBentRod,
+            RandomPosition,
+            RandomAngle,
+            CellGeometry,
+        )
+        + additional_classes,
+        {},
+    )
+
+    return cell
+
+
+PlacedCell = generate_cell(BentRod)
 
 
 class SimulatedCell:

@@ -52,3 +52,10 @@ class PhysicalPlacement(PlacementSimulation, PlacementSimulation.Virtual):
 
 class NoPlacement(PlacementSimulation):
     pass
+
+
+def ensure_python(value):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    else:
+        return value

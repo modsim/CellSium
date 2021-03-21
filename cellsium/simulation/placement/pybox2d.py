@@ -6,6 +6,7 @@ from .base import (
     PhysicalPlacement,
     PlacementSimulation,
     PlacementSimulationSimplification,
+    ensure_python,
 )
 
 
@@ -21,16 +22,18 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
 
     def add_boundary(self, coordinates):
         coordinates = np.array(coordinates)
-        # self.world.CreateStaticBody(B2D.b2PolygonShape)
 
         for start, stop in zip(coordinates, coordinates[1:]):
             self.boundaries.append([start, stop])
-            # segment = pymunk.Segment(new_body, start, stop, 0.0)
-            # self.space.add(segment)
-
-        # self.space.add(new_body)
+            self.world.CreateStaticBody(
+                shapes=B2D.b2EdgeShape(
+                    vertices=[ensure_python(start), ensure_python(stop)]
+                )
+            )
 
     def add(self, cell):
+        # Box2D only allows for 16 vertices per body, and the current implementation would vastly exceed that
+        # hence only simplifications
         assert PlacementSimulationSimplification.value != 0
 
         if PlacementSimulationSimplification.value == 2:
@@ -43,7 +46,7 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
                 B2D.b2PolygonShape(
                     vertices=cell.raw_points(
                         simplify=PlacementSimulationSimplification.value == 1
-                    )
+                    ).tolist()
                 )
             ]
 
