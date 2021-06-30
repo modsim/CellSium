@@ -1,8 +1,8 @@
 # CellSium
 
-CellSium - *Cell* *Si*mulator for *micro*fluidic *m*icrocolonies
+CellSium - *Cell* *Si*mulator for *micro*fluidic *m*icrocolonies.
 
-This software is currently in development. Install process:
+**Important**: The software and accompanying publication are currently being finalized. Documentation is not yet finished.
 
 - `conda build recipe`
 - `conda create -n cellsium`
