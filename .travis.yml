@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.9"
+
+install:
+  - "pip install pytest pytest-cov codecov"
+  - "pip install opencv-python"
+  - "pip install  ."
+
+script: pytest
+
+after_success:
+  - "codecov"
