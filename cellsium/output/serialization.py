@@ -6,7 +6,7 @@ import numpy as np
 from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 jsonpickle.ext.numpy.register_handlers()
-jsonpickle.util.PRIMITIVES += (
+additional_primitives = (
     np.float32,
     np.float64,
     np.int8,
@@ -19,6 +19,13 @@ jsonpickle.util.PRIMITIVES += (
     np.uint32,
     np.uint64,
 )
+if isinstance(jsonpickle.util.PRIMITIVES, tuple):
+    jsonpickle.util.PRIMITIVES += additional_primitives
+elif isinstance(jsonpickle.util.PRIMITIVES, set):
+    for additional_primitive in additional_primitives:
+        jsonpickle.util.PRIMITIVES.add(additional_primitive)
+else:
+    pass  # unexpected. maybe emit a warning
 
 
 class JsonPickleSerializer(Output):
