@@ -116,7 +116,7 @@ def mkdirs(*args):
 
 
 class GroundTruthOnlyCompleteCells(Tunable):
-    """ Whether to omit cells which would not be completely visible. """
+    """Whether to omit cells which would not be completely visible."""
 
     default = True
 
@@ -129,7 +129,7 @@ class GroundTruthOnlyCompleteCellsInImages(Tunable):
 
 
 class GroundTruthMaskCoordinateResolution(Tunable):
-    """ Resolution for ground truth coordinate data (e.g. JSON files). """
+    """Resolution for ground truth coordinate data (e.g. JSON files)."""
 
     default = 0.1
 
@@ -255,13 +255,13 @@ def convert_points_to_rle(points):
 
 
 class COCOEncodeRLE(Tunable):
-    """ Whether to encode segmentation data as RLE format. """
+    """Whether to encode segmentation data as RLE format."""
 
     default = False
 
 
 class COCOOutputStuff(Tunable):
-    """ Whether to output dense stuffthingmaps along the COCO data. """
+    """Whether to output dense stuffthingmaps along the COCO data."""
 
     default = False
 

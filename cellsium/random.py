@@ -29,7 +29,7 @@ class RandomNumberGenerator(Tunable):
 
 
 class RRF:
-    """ Reproducible random function """
+    """Reproducible random function"""
 
     seed_value = 0
 
