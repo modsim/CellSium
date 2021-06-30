@@ -1,10 +1,11 @@
 language: python
 python:
-  - "3.9"
+  - "3.8"
 
 install:
   - "pip install pytest pytest-cov codecov"
-  - "pip install opencv-python"
+  - "pip install opencv-python box2d"
+  - "pip install https://github.com/csachs/tunable/archive/refs/heads/main.zip"
   - "pip install  ."
 
 script: pytest
