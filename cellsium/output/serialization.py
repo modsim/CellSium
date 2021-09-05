@@ -19,13 +19,10 @@ additional_primitives = (
     np.uint32,
     np.uint64,
 )
-if isinstance(jsonpickle.util.PRIMITIVES, tuple):
-    jsonpickle.util.PRIMITIVES += additional_primitives
-elif isinstance(jsonpickle.util.PRIMITIVES, set):
-    for additional_primitive in additional_primitives:
-        jsonpickle.util.PRIMITIVES.add(additional_primitive)
-else:
-    pass  # unexpected. maybe emit a warning
+
+jsonpickle.util.PRIMITIVES = type(jsonpickle.util.PRIMITIVES)(
+    list(jsonpickle.util.PRIMITIVES) + list(additional_primitives)
+)
 
 
 class JsonPickleSerializer(Output):
