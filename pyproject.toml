@@ -1,28 +1,17 @@
 [build-system]
-requires = ["flit_core >=2,<4"]
+requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "cellsium"
-author = "Christian C. Sachs"
-author-email = "c.sachs@fz-juelich.de"
-home-page = "https://github.com/modsim/cellsium"
-description-file = "README.md"
-license = "BSD"
-requires = [
-    "numpy>=1.17",
-    "scipy",
-    "matplotlib",
-    "tunable",
-    "jsonpickle",
-    "tqdm",
-    "pymunk",
-    # "opencv",  # no proper way of requiring this pip-compatible
-    "tifffile",
-    "roifile",
-    "numpy-stl",
-    "ezdxf",
+[project]
+dynamic = ["version"]
+name = "cellsium"
+authors = [
+    {name = "Christian C. Sachs", email = "c.sachs@fz-juelich.de"},
 ]
+description = "tunable manager"
+readme = "README.md"
+license = { file = "LICENSE.rst" }
+urls = { Source = "https://github.com/modsim/cellsium" }
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -36,6 +25,20 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Image Recognition",
+]
+dependencies = [
+    "numpy>=1.17",
+    "scipy",
+    "matplotlib",
+    "tunable",
+    "jsonpickle",
+    "tqdm",
+    "pymunk",
+    # "opencv",  # no proper way of requiring this pip-compatible
+    "tifffile",
+    "roifile",
+    "numpy-stl",
+    "ezdxf",
 ]
 
 [tool.black]
