@@ -32,10 +32,16 @@ release = cellsium.__version__
 
 # -- General configuration ---------------------------------------------------
 
+sys.path.insert(0, os.path.abspath('./_ext'))
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'automagicdoc',
 ]
+
+automagic_modules = [cellsium]
+automagic_ignore = ['*test*']
 
 
 language = 'en'
