@@ -11,26 +11,38 @@ from .. import add_output_prefix, initialize_cells, initialize_simulator
 
 
 class SimulationDuration(Tunable):
+    """Time (simulated) the simulation should run"""
+
     default = 12.0
 
 
 class SimulationOutputInterval(Tunable):
+    """Time intervals (simulated) at which an output should be written"""
+
     default = 0.25
 
 
 class SimulationTimestep(Tunable):
+    """Time step at which the simulation state should be calculated"""
+
     default = 1.0 / 60.0
 
 
 class SimulationOutputFirstState(Tunable):
+    """Whether to output the first state"""
+
     default = False
 
 
 class BoundariesFile(Tunable):
+    """Boundaries file (in DXF format) to add boundaries/geometrical constraints"""
+
     default = ""
 
 
 class BoundariesScaleFactor(Tunable):
+    """Scale factor for the boundaries"""
+
     default = 1.0
 
 

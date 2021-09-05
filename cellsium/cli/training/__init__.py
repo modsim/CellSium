@@ -8,18 +8,26 @@ from .. import add_output_prefix, initialize_cells, initialize_simulator
 
 
 class TrainingDataCount(Tunable):
+    """Training samples to generate"""
+
     default = 16
 
 
 class TrainingCellCount(Tunable):
+    """Cells to add to training samples"""
+
     default = 32
 
 
 class TrainingImageWidth(Tunable):
+    """Image width in pixels of training images"""
+
     default = 128
 
 
 class TrainingImageHeight(Tunable):
+    """Image height in pixels of training images"""
+
     default = 128
 
 

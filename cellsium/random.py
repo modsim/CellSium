@@ -3,10 +3,14 @@ from tunable import Tunable
 
 
 class Seed(Tunable):
+    """Seed for the random number generator"""
+
     default = 1
 
 
 class RandomNumberGenerator(Tunable):
+    """Random number generator to be used"""
+
     @classmethod
     def available_rngs(cls):
         members = [getattr(np.random, name) for name in dir(np.random)]

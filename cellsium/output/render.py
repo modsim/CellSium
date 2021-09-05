@@ -70,10 +70,14 @@ def gaussian(array, dst=None, sigma=1.0):
 
 
 class LuminanceBackground(Tunable):
+    """Luminance (lightness) of the background, in 0-1 units."""
+
     default = 0.17
 
 
 class LuminanceCell(Tunable):
+    """Luminance (lightness) of cells, in 0-1 units."""
+
     default = 0.075
 
 
@@ -93,6 +97,8 @@ def new_canvas(dtype=np.float32):
 
 
 class OpenCVimshow(Tunable):
+    """Show results using OpenCV"""
+
     default = False
 
 
@@ -353,34 +359,50 @@ class PlainRenderer(Output):
 
 
 class FluorescenceEmitterKernelSizeW(Tunable):
+    """Kernel size for fluorescence emitter placement, width"""
+
     default = 17
 
 
 class FluorescenceEmitterKernelSizeH(Tunable):
+    """Kernel size for fluorescence emitter placement, height"""
+
     default = 17
 
 
 class FluorescenceEmitterGaussianW(Tunable):
+    """Fluorescence emitter placement Gaussian sigma, horizontal"""
+
     default = 2.5
 
 
 class FluorescenceEmitterGaussianH(Tunable):
+    """Fluorescence emitter placement Gaussian sigma, vertical"""
+
     default = 2.5
 
 
 class FluorescenceNoiseMean(Tunable):
+    """Fluorescence noise mean"""
+
     default = 0.0
 
 
 class FluorescenceNoiseStd(Tunable):
+    """Fluorescence noise standard deviation"""
+
     default = 0.15
 
 
 class FluorescenceRatioBackground(Tunable):
+    """Fluorescence background ratio"""
+
     default = 1.0
 
 
 class FluorescenceCellSizeFactor(Tunable):
+    """Fluorescence cell size to fluorescence factor"""
+
     default = 500.0
 
 
@@ -530,10 +552,14 @@ class PhaseContrastRenderer(PlainRenderer):
 
 
 class UnevenIlluminationAdditiveFactor(Tunable):
+    """Additive component for the uneven illumination"""
+
     default = 0.02
 
 
 class UnevenIlluminationMultiplicativeFactor(Tunable):
+    """Multiplicative factor for the uneven illumination"""
+
     # default = 0.05
     default = 0.25
 
@@ -600,10 +626,14 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
 
 
 class RoiOutputScaleFactor(Tunable):
+    """Scale factor for the ROI output"""
+
     default = 1.0
 
 
 class RoiOutputScaleDelta(Tunable):
+    """Scale delta for the ROI output"""
+
     default = -4.0
 
 
@@ -620,6 +650,8 @@ def collect_subclasses(start):
 
 
 class RenderChannels(Tunable):
+    """Channels to render (i.e. output classes which produce rendered images)"""
+
     default = 'NoisyUnevenIlluminationPhaseContrast'
     # default = 'NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer'
 

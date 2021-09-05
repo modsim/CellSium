@@ -8,6 +8,8 @@ from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class MicrometerPerCm(Tunable):
+    """Calibration for outputs, micrometer per centimeter"""
+
     default = 2.5
 
 

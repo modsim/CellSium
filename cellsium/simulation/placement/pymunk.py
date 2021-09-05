@@ -19,6 +19,8 @@ import pymunk
 
 
 class ChipmunkPlacementRadius(Tunable):
+    """Chipmunk placement radius, additional radius objects will have around them"""
+
     default = 0.05
 
 

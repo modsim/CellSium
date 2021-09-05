@@ -70,18 +70,26 @@ def check_overwrite(path, overwrite=False):
 
 
 class OutputIndividualFiles(Tunable):
+    """Output individual files"""
+
     default = True
 
 
 class OutputIndividualFilesZeros(Tunable):
+    """Amount of digits used for outputting the frame number of individual file names"""
+
     default = 3
 
 
 class OutputIndividualFilesWildcard(Tunable):
+    """Pattern for individual file names"""
+
     default = '{}'
 
 
 class OutputReproducibleFiles(Tunable):
+    """Output files in a reproducible manner"""
+
     default = True
 
 

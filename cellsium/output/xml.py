@@ -9,11 +9,15 @@ from . import Output, check_overwrite, ensure_path_and_extension
 
 
 class TrackMateXMLExportFluorescences(Tunable):
+    """Names for the fluorescences for the JuNGLE TrackMate format"""
+
     # default = ''
     default = 'Crimson,YFP'
 
 
 class TrackMateXMLExportLengthTypo(Tunable):
+    """Whether to output in the classic JuNGLE TrackMate format"""
+
     default = True
 
 

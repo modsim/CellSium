@@ -11,6 +11,8 @@ from . import (
 
 
 class MeshCellScaleFactor(Tunable):
+    """Scale factor for mesh output"""
+
     default = 1.0
 
 
