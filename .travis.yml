@@ -3,12 +3,10 @@ python:
   - "3.8"
 
 install:
-  - "pip install pytest pytest-cov codecov"
-  - "pip install opencv-python box2d"
-  - "pip install https://github.com/csachs/tunable/archive/refs/heads/main.zip"
-  - "pip install  ."
+  - pip install opencv-python codecov
+  - pip install ".[check,test,doc]"
 
-script: pytest
+script: black --check cellsium && isort --check cellsium && pflake8 cellsium && pytest
 
 after_success:
-  - "codecov"
+  - codecov

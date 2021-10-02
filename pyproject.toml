@@ -8,7 +8,7 @@ name = "cellsium"
 authors = [
     {name = "Christian C. Sachs", email = "c.sachs@fz-juelich.de"},
 ]
-description = "tunable manager"
+description = "CellSium – Cell Simulator for microfluidic microcolonies"
 readme = "README.md"
 license = { file = "LICENSE.rst" }
 urls = { Source = "https://github.com/modsim/cellsium" }
@@ -23,6 +23,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Image Recognition",
 ]
@@ -34,12 +35,18 @@ dependencies = [
     "jsonpickle",
     "tqdm",
     "pymunk",
+    "box2d",
     # "opencv",  # no proper way of requiring this pip-compatible
     "tifffile",
     "roifile",
     "numpy-stl",
     "ezdxf",
 ]
+
+[project.optional-dependencies]
+check = ["black", "isort", "pyproject-flake8", "pylint"]
+test = ["pytest", "pytest-cov"]
+doc = ["sphinx", "sphinx-rtd-theme"]
 
 [tool.black]
 skip-string-normalization = 1
