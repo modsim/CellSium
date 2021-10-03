@@ -70,7 +70,7 @@ def subcommand_main(args: Namespace) -> None:
 
     for _ in tqdm.tqdm(range(TrainingDataCount.value)):
         simulator = initialize_simulator()
-        initialize_cells(simulator, count=next(ccf))
+        initialize_cells(simulator, count=next(ccf), cell_type=args.cell)
 
         simulator.step(60.0)
 

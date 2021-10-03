@@ -1,21 +1,24 @@
-"""CLI package, home to the individual entry points."""
+"""CLI package, home to the individual entry points"""
 from pathlib import Path
 from typing import Any, Optional
 
-from ..model import PlacedCell, SizerCell
+from ..model import PlacedCell, SizerCell, TimerCell
 from ..output import Output
 from ..simulation.placement import PlacementSimulation
 from ..simulation.simulator import Simulator
 
-# class Cell(PlacedCell, TimerCell):
-#    """Cell."""
-#     pass
 
-
-class Cell(PlacedCell, SizerCell):
+class TimerCell(PlacedCell, TimerCell):
     """Cell."""
 
     pass
+
+
+class SizerCell(PlacedCell, SizerCell):
+    """Cell."""
+
+
+Cell = SizerCell
 
 
 def initialize_simulator() -> Simulator:

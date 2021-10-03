@@ -72,6 +72,31 @@ def generate_cell(*additional_classes: type, name: str = "PlacedCell"):
 PlacedCell = generate_cell(BentRod)
 
 
+def assemble_cell(
+    simulated_model: type,
+    *additional_classes,
+    placed_cell: type = PlacedCell,
+    name: str = "Cell"
+):
+    """
+    Assembles a cell class from parent classes.
+    Necessary as the cell class needs the right level of inheritance.
+
+    :param simulated_model: Model class
+    :param additional_classes: Classes to create a cell type, or
+    :param placed_cell: A prepared cell
+    :param name: Optional name
+    :return: Cell class
+    """
+
+    if additional_classes:
+        base_cell = generate_cell(*additional_classes)
+    else:
+        base_cell = placed_cell
+
+    return type(name, (simulated_model, base_cell), {})
+
+
 class SimulatedCell:
     """
     Base class for simulated cells, allowing for division behavior.
@@ -218,4 +243,6 @@ __all__ = [
     'TimerCell',
     'SizerCell',
     'generate_cell',
+    'assemble_cell',
+    'Timestep',
 ]

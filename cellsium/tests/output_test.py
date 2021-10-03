@@ -65,7 +65,7 @@ def test_jsonpickle(simulator, capsys):
     result = captured.out.replace('\n', '')
     expected = (
         '{"py/object": "cellsium.simulation.simulator.World", "cells": [{"py/object":'
-        ' "cellsium.cli.Cell", "lineage_history": [0], "id_": 1, "parent_id": 0, '
+        ' "cellsium.cli.SizerCell", "lineage_history": [0], "id_": 1, "parent_id": 0, '
         '"birth_time": 0.0, "angle": 3.6942842669518385, "position": '
         '[17.90727229572483, 29.944407189601154], "bend_overall": 0.01753978255362451,'
         ' "bend_upper": -0.04126808565523994, "bend_lower": -0.09614075306364522, '

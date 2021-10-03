@@ -157,7 +157,7 @@ def subcommand_main(args: Namespace) -> None:
             BoundariesFile.value, simulator, scale_factor=BoundariesScaleFactor.value
         )
 
-    initialize_cells(simulator, count=NewCellCount.value)
+    initialize_cells(simulator, count=NewCellCount.value, cell_type=args.cell)
 
     outputs = Output.SelectableGetMultiple()
 

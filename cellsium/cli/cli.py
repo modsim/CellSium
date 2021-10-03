@@ -1,7 +1,10 @@
 """CLI entrypoint."""
+import importlib
 import logging
 import sys
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
+from types import ModuleType
 from typing import Callable, Iterable, Optional
 
 from tunable import TunableSelectable
@@ -13,6 +16,23 @@ from . import render, simulate, training
 _ = output_all
 
 log = logging.getLogger(__name__)
+
+
+def load_class_from_module(module_class: str, default_class_name: str) -> type:
+    if ':' in module_class:
+        splits = module_class.split(':')
+        module_name, class_name = ':'.join(splits[:-1]), splits[-1]
+    else:
+        module_name, class_name = module_class, default_class_name
+
+    if Path(module_name).exists():
+        module = ModuleType(default_class_name)
+        exec(Path(module_name).read_text(), module.__dict__)
+    else:
+        module = importlib.import_module(module_name)
+
+    class_type = getattr(module, class_name)
+    return class_type
 
 
 def parse_arguments_and_init(
@@ -41,6 +61,7 @@ def parse_arguments_and_init(
     parser.add_argument(
         '-p', '--prefix', dest='prefix', default=False, action='store_true'
     )
+    parser.add_argument('-c', '--cell', dest='cell', default='cellsium.cli:SizerCell')
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
         '-q', '--quiet', dest='quiet', default=False, action='store_true'
@@ -62,6 +83,11 @@ def parse_arguments_and_init(
         log.setLevel(logging.INFO)
     elif parsed_args.verbose > 1:
         log.setLevel(logging.DEBUG)
+
+    if parsed_args.cell:
+        parsed_args.cell = load_class_from_module(
+            parsed_args.cell, default_class_name='Cell'
+        )
 
     return parsed_args
 
