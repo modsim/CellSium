@@ -1,4 +1,6 @@
 """Mesh output in the STL format."""
+from typing import Dict, List
+
 import numpy as np
 from stl import Mesh, stl
 from tunable import Tunable
@@ -24,7 +26,7 @@ class MeshOutput(Output):
     def __init__(self):
         super().__init__()
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> List[Dict[str, np.ndarray]]:
         meshes = []
 
         # for boundary in world.boundaries:

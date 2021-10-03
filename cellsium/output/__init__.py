@@ -1,6 +1,6 @@
 """The output package contains the various output modules."""
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Optional, Tuple
 
 from tunable import Selectable, Tunable
 
@@ -149,7 +149,7 @@ class Output(Selectable, Selectable.Multiple):
     Base class of the Output classes.
     """
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> Optional[Any]:
         """
         Outputs the World, this function is usually called by either write or display.
 

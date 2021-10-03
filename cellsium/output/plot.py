@@ -1,5 +1,6 @@
 """Output using matplotlib."""
 import warnings
+from typing import Tuple
 
 from matplotlib import pyplot
 from tunable import Tunable
@@ -21,7 +22,7 @@ class PlotRenderer(Output, Output.Default):
 
         self.fig = self.ax = None
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> Tuple[pyplot.Figure, pyplot.Axes]:
         if self.fig is None:
             self.fig = pyplot.figure(
                 figsize=(

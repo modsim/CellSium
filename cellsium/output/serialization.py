@@ -1,6 +1,6 @@
 """Serialization outputs."""
 import csv
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import jsonpickle
 import jsonpickle.ext.numpy
@@ -33,7 +33,7 @@ jsonpickle.util.PRIMITIVES = type(jsonpickle.util.PRIMITIVES)(
 class JsonPickleSerializer(Output):
     """Output as jsonpickle serialized files."""
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> str:
         return jsonpickle.dumps(world)
 
     def write(
@@ -72,7 +72,7 @@ def type2numpy(value: Any, max_len: int = None) -> str:
 
 def prepare_numpy_dtype(
     inner: Mapping[str, Any], list_max_lens: Optional[Mapping[str, int]] = None
-) -> Dict[str, str]:
+) -> List[Tuple[str, str]]:
     return [
         (
             key,
@@ -90,7 +90,7 @@ def prepare_numpy_dtype(
 class QuickAndDirtyTableDumper(Output):
     """Simple tabular output."""
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> np.ndarray:
         if not world.cells:
             return np.zeros(0)
 
@@ -143,7 +143,9 @@ class QuickAndDirtyTableDumper(Output):
 class CsvOutput(Output):
     """CSV Tabular Output."""
 
-    def output(self, world: World, time: Optional[float] = None, **kwargs) -> None:
+    def output(
+        self, world: World, time: Optional[float] = None, **kwargs
+    ) -> List[Dict[str, Any]]:
         return [{**cell.__dict__, 'time': time} for cell in world.cells]
 
     def write(

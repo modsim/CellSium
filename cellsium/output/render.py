@@ -1,7 +1,7 @@
 """Photorealistic rendered output."""
 import os
 import warnings
-from typing import Dict, Iterator, Optional, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 import cv2
 import numpy as np
@@ -317,7 +317,7 @@ class PlainRenderer(Output):
             canvas = render_on_canvas_matplotlib(canvas, array_of_points)
         return canvas
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> np.ndarray:
         canvas = self.new_canvas()
 
         array_of_points = [
@@ -452,7 +452,7 @@ class FluorescenceRenderer(PlainRenderer):
             canvas.shape,
         )
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> np.ndarray:
         canvas = self.new_canvas()
 
         int_background = FluorescenceRatioBackground.value
@@ -543,7 +543,7 @@ class FluorescenceRenderer(PlainRenderer):
 
 
 class PhaseContrastRenderer(PlainRenderer):
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> np.ndarray:
         cell_canvas = super().output(world)
 
         background = LuminanceBackground.value * np.ones_like(cell_canvas)
@@ -611,7 +611,7 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
     def create_uneven_illumination(self) -> np.ndarray:
         self.uneven_illumination = self.new_uneven_illumination()
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> np.ndarray:
         canvas = super().output(world)
 
         self.debug_output('uneven-illumination', self.uneven_illumination)
@@ -639,7 +639,7 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
         self.product_noise = RRF.sequence.normal(1.0, 0.002, empty.shape)
         self.sum_noise = RRF.sequence.normal(0.0, 0.002, empty.shape)
 
-    def output(self, world: World, **kwargs):
+    def output(self, world: World, **kwargs) -> np.ndarray:
         canvas = super().output(world)
 
         product_noise = next(self.product_noise)
@@ -713,7 +713,7 @@ class TiffOutput(Output):
         self.file_name = None
         self.rois = []
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> List[np.ndarray]:
         return [c.output(world) for c in self.channels]
 
     def __del__(self):

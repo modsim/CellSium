@@ -3,7 +3,7 @@ import json
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Optional
 
 import cv2
 import numpy as np
@@ -157,7 +157,7 @@ class GroundTruthOutput(Output, Output.Virtual):
             )
         )
 
-    def output(self, world: World, **kwargs) -> None:
+    def output(self, world: World, **kwargs) -> Optional[Any]:
         raise RuntimeError("GroundTruthOutput s only support writing.")
 
     def _write_channels(
