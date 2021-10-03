@@ -53,7 +53,7 @@ CellSium can be installed via pip, ideally create and activate an environment be
 
 .. code-block:: bash
 
-    > python -m pip install cellsium opencv-python
+    > python -m pip install cellsium
 
 Installation using conda
 ########################
@@ -69,12 +69,32 @@ Usage
 -----
 
 Once installed, run CellSium via :code:`python -m cellsium`, specifying the desired entrypoint and options, such as outputs.
-CellSium is built modular, various output modules can be activated simultaneously:
+CellSium is built modular, various output modules can be activated simultaneously. To get an overview of the available options,
+use the :code:`--help` switch. Furthermore, the main mode of setting tunable paramters are so called *tunables*, which can
+be set from the command line using the :code:`-t` switches. A list of tunables can be shown using the :code:`--tunables-show` argument.
 
 .. code-block:: bash
 
     > python -m cellsium --help
+    usage: __main__.py [-v] [-q] [-c CELL] [-p] [-w] [-o OUTPUT] [-h] [-m MODULE]
+                   [--Output {COCOOutput,CsvOutput,FluorescenceRenderer,GenericMaskOutput,JsonPickleSerializer,MeshOutput,NoisyUnevenIlluminationPhaseContrast,PhaseContrastRenderer,PlainRenderer,PlotRenderer,QuickAndDirtyTableDumper,SvgRenderer,TiffOutput,TrackMateXML,UnevenIlluminationPhaseContrast,YOLOOutput}]
+                   [--PlacementSimulation {Box2D,Chipmunk,NoPlacement}] [-t TUNABLE] [--tunables-show] [--tunables-load TUNABLES_LOAD] [--tunables-save TUNABLES_SAVE]
 
+    optional arguments:
+      -h, --help            show this help message and exit
+      -o OUTPUT, --output-file OUTPUT
+      -w, --overwrite
+      -p, --prefix
+      -c CELL, --cell CELL
+      -q, --quiet
+      -v, --verbose
+      -m MODULE, --module MODULE
+      --Output {COCOOutput,CsvOutput,FluorescenceRenderer,GenericMaskOutput,JsonPickleSerializer,MeshOutput,NoisyUnevenIlluminationPhaseContrast,PhaseContrastRenderer,PlainRenderer,PlotRenderer,QuickAndDirtyTableDumper,SvgRenderer,TiffOutput,TrackMateXML,UnevenIlluminationPhaseContrast,YOLOOutput}
+      --PlacementSimulation {Box2D,Chipmunk,NoPlacement}
+      -t TUNABLE, --tunable TUNABLE
+      --tunables-show
+      --tunables-load TUNABLES_LOAD
+      --tunables-save TUNABLES_SAVE
 
 
 You can for example run a default simulation by just starting CellSium, the results will be shown interactively using matplotlib:
@@ -83,8 +103,19 @@ You can for example run a default simulation by just starting CellSium, the resu
 
     > python -m cellsium
 
-Various output modes can be activated, some however only support writing their outputs to disk.
+For more in-depth usage examples, please see the :doc:`examples <examples>` section.
+
+Docker
+------
+
+An alternative to installing CellSium locally is running it via Docker. To run CellSium without interactive (GUI) elements, the following Docker command can be used, with parameters to CellSium being appended.
 
 .. code-block:: bash
 
-    > python -m cellsium --Output
+    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` cellsium
+
+To use interactive (GUI) elements such as the :code:`PlotRenderer`, an X server must be reachable; under Linux the following command can be used:
+
+.. code-block:: bash
+
+    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` --env DISPLAY=$DISPLAY --volume /tmp/.X11-unix:/tmp/.X11-unix cellsium

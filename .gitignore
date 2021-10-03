@@ -4,6 +4,7 @@ tmp/
 build/
 dist/
 _build/
+venv/
 
 .ipynb_checkpoints/
 
@@ -16,6 +17,9 @@ _build/
 *.pyc
 MANIFEST
 *.egg-info/
+
+htmlcov/
+.coverage
 
 # OS generated files #
 ######################
