@@ -140,6 +140,10 @@ class RRF:
             yield from func(**kwargs)
 
 
+# seed the RRF so it can be used without explicit initialization
+RRF.seed()
+
+
 def enforce_bounds(
     iterator: Iterator, minimum: float = -np.Inf, maximum: float = np.Inf
 ) -> Iterator[Union[float, np.ndarray]]:
