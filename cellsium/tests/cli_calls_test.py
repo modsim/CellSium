@@ -9,6 +9,7 @@ ALL_OUTPUTS = [
     'FluorescenceRenderer',
     'GenericMaskOutput',
     'JsonPickleSerializer',
+    'CsvOutput',
     'MeshOutput',
     'NoisyUnevenIlluminationPhaseContrast',
     'PhaseContrastRenderer',

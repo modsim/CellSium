@@ -1,4 +1,5 @@
 """Serialization outputs."""
+import csv
 from typing import Any, Dict, Mapping, Optional
 
 import jsonpickle
@@ -139,7 +140,44 @@ class QuickAndDirtyTableDumper(Output):
         )
 
 
+class CsvOutput(Output):
+    """CSV Tabular Output."""
+
+    def output(self, world: World, time: Optional[float] = None, **kwargs) -> None:
+        return [{**cell.__dict__, 'time': time} for cell in world.cells]
+
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        time: Optional[float] = None,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
+    ):
+        rows = self.output(world, time=time)
+        header = list(sorted(rows[0].keys()))
+
+        with open(
+            check_overwrite(
+                ensure_path_and_extension_and_number(file_name, '.csv', output_count),
+                overwrite=overwrite,
+            ),
+            'w',
+            newline='',
+        ) as fp:
+            writer = csv.writer(fp)
+
+            writer.writerow(header)
+
+            for row in rows:
+                writer.writerow(
+                    [row[column] if column in row else '' for column in header]
+                )
+
+
 __all__ = [
     'JsonPickleSerializer',
     'QuickAndDirtyTableDumper',
+    'CsvOutput',
 ]

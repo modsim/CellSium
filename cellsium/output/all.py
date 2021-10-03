@@ -10,7 +10,7 @@ from .render import (
     TiffOutput,
     UnevenIlluminationPhaseContrast,
 )
-from .serialization import JsonPickleSerializer, QuickAndDirtyTableDumper
+from .serialization import CsvOutput, JsonPickleSerializer, QuickAndDirtyTableDumper
 from .svg import SvgRenderer
 from .xml import TrackMateXML
 
@@ -29,6 +29,7 @@ __all__ = [
     'TiffOutput',
     'JsonPickleSerializer',
     'QuickAndDirtyTableDumper',
+    'CsvOutput',
     'SvgRenderer',
     'TrackMateXML',
 ]
