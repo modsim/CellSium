@@ -9,7 +9,7 @@ authors = [
     {name = "Christian C. Sachs", email = "c.sachs@fz-juelich.de"},
 ]
 description = "CellSium – Cell Simulator for microfluidic microcolonies"
-readme = "README.md"
+readme = "README.rst"
 license = { file = "LICENSE.rst" }
 urls = { Source = "https://github.com/modsim/cellsium" }
 classifiers = [
@@ -22,8 +22,8 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Image Recognition",
 ]
@@ -36,7 +36,7 @@ dependencies = [
     "tqdm",
     "pymunk",
     "box2d",
-    # "opencv",  # no proper way of requiring this pip-compatible
+    "opencv-python",
     "tifffile",
     "roifile",
     "numpy-stl",
@@ -64,3 +64,7 @@ max-line-length = 88
 exclude = "local"
 extend-ignore = "E203,"
 max-complexity = 10
+
+[tool.mypy]
+warn_return_any = true
+ignore_missing_imports = true

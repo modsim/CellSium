@@ -21,7 +21,7 @@ WORKDIR /tmp/package
 
 RUN BUILD_START=`date +%s%N` && \
     apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates wget && \
+    apt-get install -y --no-install-recommends libgl1-mesa-glx ca-certificates wget && \
     rm -rf /var/lib/apt/lists/* && \
     WORKDIR=`pwd` && mkdir -p /opt/conda/bin && cd /opt/conda/bin && \
     wget -qO- $MICROMAMBA | tar xj bin/micromamba --strip-components=1 && unset MICROMAMBA && \

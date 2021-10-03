@@ -3,7 +3,7 @@ python:
   - "3.8"
 
 install:
-  - pip install opencv-python codecov
+  - pip install codecov
   - pip install ".[check,test,doc]"
 
 script: black --check cellsium && isort --check cellsium && pflake8 cellsium && pytest
