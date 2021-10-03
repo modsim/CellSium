@@ -13,6 +13,16 @@
 import os
 import sys
 
+assert sys.version_info.major == 3
+if sys.version_info.minor < 8:
+    # readthedocs runs Python 3.7
+    import typing
+
+    class Protocol:
+        pass
+
+    typing.Protocol = Protocol
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import cellsium  # noqa

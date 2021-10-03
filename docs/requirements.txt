@@ -1,0 +1,13 @@
+numpy>=1.17
+scipy
+matplotlib
+tunable
+jsonpickle
+tqdm
+pymunk
+box2d
+opencv-python
+tifffile
+roifile
+numpy-stl
+ezdxf
