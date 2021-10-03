@@ -127,6 +127,10 @@ class Timestep:
         """
         return s_to_h(self.time)
 
+    @property
+    def world(self) -> World:
+        return self.simulation.world
+
     def __init__(self, timestep: float, simulation: Simulation, simulator: "Simulator"):
         self.timestep, self.simulation, self.simulator = timestep, simulation, simulator
 
@@ -157,7 +161,7 @@ class Simulator(BaseSimulator):
 
         self.simulation.world.clear()
 
-    def step(self, timestep: float = 0.0) -> None:
+    def step(self, timestep: float = 0.0) -> Timestep:
 
         simulation = self.simulation
         # possibly a deep copy if former states should be preserved?
@@ -183,3 +187,5 @@ class Simulator(BaseSimulator):
                 sim.add(cell)
 
             sim.step(timestep)
+
+        return ts

@@ -37,10 +37,10 @@ def initialize_simulator() -> Simulator:
 
 def initialize_cells(
     simulator: Simulator,
-    count: int = 0,
+    count: int = 1,
     cell_type: Optional[PlacedCell] = None,
     sequence: Any = None,
-):
+) -> Simulator:
     """
     Initialize cells and add them to a simulator.
 
@@ -48,7 +48,7 @@ def initialize_cells(
     :param count: Count of cells to generate
     :param cell_type: cell type to use
     :param sequence: Random number sequence to use
-    :return: None
+    :return: Simulator
     """
     if cell_type is None:
         cell_type = Cell
@@ -71,6 +71,8 @@ def initialize_cells(
         cell = cell_type(**init_kwargs)
         cell.birth()
         simulator.add(cell)
+
+    return simulator
 
 
 def add_output_prefix(output_name: str, output: Output) -> str:
