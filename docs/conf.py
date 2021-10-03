@@ -41,7 +41,7 @@ extensions = [
 ]
 
 automagic_modules = [cellsium]
-automagic_ignore = ['*test*']
+automagic_ignore = ['*test*', 'cellsium.output.all']
 
 
 language = 'en'

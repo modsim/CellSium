@@ -10,7 +10,10 @@ Welcome to CellSium's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   readme
+   license
+   examples
+   cellsium
 
 Indices and tables
 ==================

@@ -171,8 +171,8 @@ def prepare_rst_content(submodule, submodules):
         ]
     )
 
-    subpackages_block = """Subpackages
------------
+    subpackages_block = """.. Subpackages
+.. -----------
 
 .. toctree::
    :maxdepth: 4
@@ -182,6 +182,11 @@ def prepare_rst_content(submodule, submodules):
 {title}
 {"=" * len(title)}
 
+.. automodule:: {submodule.module_str}
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   
 {subpackages_block if subpackages else ""}
 {subpackages}
 
@@ -195,8 +200,8 @@ def prepare_rst_content(submodule, submodules):
 
     if len(subsubmodules):
         result += """
-Submodules
-----------
+.. Submodules
+.. ----------
     """
 
     for subsubmodule in subsubmodules:
