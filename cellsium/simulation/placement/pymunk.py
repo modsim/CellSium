@@ -1,6 +1,8 @@
+"""Placement simulation using Pymunk physics engine."""
 import numpy as np
 from tunable import Tunable
 
+from ...model import PlacedCell
 from .base import (
     PhysicalPlacement,
     PlacementSimulation,
@@ -21,14 +23,14 @@ import pymunk
 class ChipmunkPlacementRadius(Tunable):
     """Chipmunk placement radius, additional radius objects will have around them"""
 
-    default = 0.05
+    default: float = 0.05
 
 
 class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Default):
 
-    verbose = False
-    look_back_threshold = 5
-    convergence_check_interval = 15
+    verbose: bool = False
+    look_back_threshold: int = 5
+    convergence_check_interval: int = 15
 
     def __init__(self):
         self.space = pymunk.Space(threaded=False)
@@ -43,7 +45,7 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         super().__init__()
 
-    def add_boundary(self, coordinates):
+    def add_boundary(self, coordinates: np.ndarray) -> None:
         coordinates = np.array(coordinates)
 
         boundary_body = pymunk.Body(body_type=pymunk.Body.STATIC)
@@ -62,7 +64,7 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
         self.boundary_bodies.append(boundary_body)
         self.boundary_segments.append(boundary_segments)
 
-    def add(self, cell):
+    def add(self, cell: PlacedCell) -> None:
         body = pymunk.Body(1.0, 1.0)
         body.position = pymunk.Vec2d(cell.position[0], cell.position[1])
         body.angle = cell.angle
@@ -87,13 +89,13 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         self.space.add(body, *shapes)
 
-    def remove(self, cell):
+    def remove(self, cell: PlacedCell) -> None:
         self.space.remove(self.cell_bodies[cell], *self.cell_shapes[cell])
 
         del self.cell_bodies[cell]
         del self.cell_shapes[cell]
 
-    def clear(self):
+    def clear(self) -> None:
         super().clear()
 
         for boundary_body, boundary_segments in zip(
@@ -105,7 +107,7 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
         self.boundary_bodies.clear()
         self.boundary_segments.clear()
 
-    def step(self, timestep):
+    def step(self, timestep: float) -> None:
         if len(self.cell_bodies) == 0:
             return
 
@@ -116,7 +118,13 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
         )
         _ = last
 
-    def inner_step(self, time_step=0.1, iterations=9999, converge=True, epsilon=0.1):
+    def inner_step(
+        self,
+        time_step: float = 0.1,
+        iterations: int = 9999,
+        converge: bool = True,
+        epsilon: float = 0.1,
+    ) -> float:
 
         first_positions = self._get_positions()[:, :2]
 
@@ -133,18 +141,24 @@ class Chipmunk(PhysicalPlacement, PlacementSimulation, PlacementSimulation.Defau
 
         return self._total_distance(first_positions, after_positions)
 
-    def _inner_step_update_positions(self):
+    def _inner_step_update_positions(self) -> None:
         for cell, body in self.cell_bodies.items():
             cell.position = [body.position[0], body.position[1]]
             cell.angle = body.angle
 
-    def _inner_step_step_ignore_converge(self, iterations, time_step):
+    def _inner_step_step_ignore_converge(
+        self, iterations: int, time_step: float
+    ) -> None:
         for _ in range(iterations):
             self.space.step(time_step)
 
     def _inner_step_step_attempt_converge(
-        self, epsilon, first_positions, iterations, time_step
-    ):
+        self,
+        epsilon: float,
+        first_positions: np.ndarray,
+        iterations: int,
+        time_step: float,
+    ) -> None:
         converging = False
         look_back = 0
         convergence_check = self.convergence_check_interval

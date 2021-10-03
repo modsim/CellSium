@@ -1,9 +1,18 @@
+"""Cell model classes and routines, general."""
 from copy import deepcopy
+from typing import Any, List
 
 from ..random import RRF
+from ..typing import DefaultsType
 
 
-def iter_through_class_hierarchy(cls):
+def iter_through_class_hierarchy(cls: type) -> List[type]:
+    """
+    Iterate thru a class hierarchy and return all bases.
+
+    :param cls: Type
+    :return: List of bases
+    """
     collector = []
 
     def _inner(cls_):
@@ -18,6 +27,8 @@ def iter_through_class_hierarchy(cls):
 
 
 class InitializeWithParameters:
+    """Mixin for objects with defaults."""
+
     def __init__(self, **kwargs):
         for cls_ in iter_through_class_hierarchy(self.__class__):
             if hasattr(cls_, 'defaults'):
@@ -31,11 +42,12 @@ class InitializeWithParameters:
 
 
 class WithRandomSequences:
+    """Mixin for objects with random sequences."""
 
     all_random_sequences_generated_for = {}
 
     @classmethod
-    def get_random_sequences(cls, sequence=None):
+    def get_random_sequences(cls, sequence: Any = None) -> Any:
         if sequence is not None and cls in cls.all_random_sequences_generated_for:
             del cls.all_random_sequences_generated_for[cls]
 
@@ -53,7 +65,7 @@ class WithRandomSequences:
         return cls.all_random_sequences_generated_for[cls]
 
     @property
-    def random(self):
+    def random(self) -> Any:
         class _Proxy:
             def __init__(self, backing):
                 self.backing = backing
@@ -65,11 +77,15 @@ class WithRandomSequences:
 
 
 class Copyable:
-    def copy(self):
+    """Mixin for copyable objects."""
+
+    def copy(self) -> "Copyable":
         return deepcopy(self)
 
 
 class Representable:
+    """Mixins for adding a repr implementation."""
+
     def __repr__(self):
         return (
             self.__class__.__name__
@@ -80,42 +96,50 @@ class Representable:
 
 
 class IdCounter:
-    id_counter = 0
+    """Id provider singleton class."""
+
+    id_counter: int = 0
 
     @classmethod
-    def next_cell_id(cls):
+    def next_cell_id(cls) -> int:
         cls.id_counter += 1
         return cls.id_counter
 
     @classmethod
-    def reset(cls):
+    def reset(cls) -> None:
         cls.id_counter = 0
 
 
 class WithLineage:
-    def copy(self):
+    """Mixin providing lineage tracking."""
+
+    def copy(self) -> "WithLineage":
         copy = super().copy()
         copy.next_cell_id()
         return copy
 
     # noinspection PyAttributeOutsideInit
-    def next_cell_id(self):
+    def next_cell_id(self) -> None:
         self.id_ = IdCounter.next_cell_id()
 
     @staticmethod
-    def defaults():
+    def defaults() -> DefaultsType:
         return dict(id_=lambda: IdCounter.next_cell_id(), parent_id=0)
 
 
 class WithLineageHistory:
+    """Mixin providing lineage history."""
+
     @staticmethod
-    def defaults():
+    def defaults() -> DefaultsType:
         return dict(lineage_history=lambda: [0])
 
 
 class WithTemporalLineage:
+    """Mixing providing temporal lineage history."""
+
     @staticmethod
-    def defaults():
+    def defaults() -> DefaultsType:
         return dict(birth_time=0.0)
 
 

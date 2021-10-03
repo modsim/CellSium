@@ -1,3 +1,6 @@
+"""Training Generation CLI entrypoint."""
+from argparse import Namespace
+
 import tqdm
 from tunable import Tunable, TunableManager
 
@@ -10,31 +13,38 @@ from .. import add_output_prefix, initialize_cells, initialize_simulator
 class TrainingDataCount(Tunable):
     """Training samples to generate"""
 
-    default = 16
+    default: int = 16
 
 
 class TrainingCellCount(Tunable):
     """Cells to add to training samples"""
 
-    default = 32
+    default: int = 32
 
 
 class TrainingImageWidth(Tunable):
     """Image width in pixels of training images"""
 
-    default = 128
+    default: int = 128
 
 
 class TrainingImageHeight(Tunable):
     """Image height in pixels of training images"""
 
-    default = 128
+    default: int = 128
 
 
 tqdm.tqdm.monitor_interval = 0
 
 
-def subcommand_main(args):
+def subcommand_main(args: Namespace) -> None:
+    """
+    Entry point for the 'training' subcommand.
+
+    :param args: pre-parsed arguments
+    :return: None
+    """
+
     shape = (TrainingImageHeight.value, TrainingImageWidth.value)
 
     cell_count = TrainingCellCount.value

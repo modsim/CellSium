@@ -1,8 +1,12 @@
+"""Serialization outputs."""
+from typing import Any, Dict, Mapping, Optional
+
 import jsonpickle
 import jsonpickle.ext.numpy
 import jsonpickle.util
 import numpy as np
 
+from ..simulation.simulator import World
 from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 jsonpickle.ext.numpy.register_handlers()
@@ -26,10 +30,19 @@ jsonpickle.util.PRIMITIVES = type(jsonpickle.util.PRIMITIVES)(
 
 
 class JsonPickleSerializer(Output):
-    def output(self, world, **kwargs):
+    """Output as jsonpickle serialized files."""
+
+    def output(self, world: World, **kwargs) -> None:
         return jsonpickle.dumps(world)
 
-    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
+    ) -> None:
         with open(
             check_overwrite(
                 ensure_path_and_extension_and_number(file_name, '.json', output_count),
@@ -39,11 +52,11 @@ class JsonPickleSerializer(Output):
         ) as fp:
             fp.write(self.output(world))
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
         print(self.output(world))
 
 
-def type2numpy(value, max_len=None):
+def type2numpy(value: Any, max_len: int = None) -> str:
     if isinstance(value, int):
         return 'i8'
     elif isinstance(value, float):
@@ -56,7 +69,9 @@ def type2numpy(value, max_len=None):
         raise RuntimeError('...')
 
 
-def prepare_numpy_dtype(inner, list_max_lens=None):
+def prepare_numpy_dtype(
+    inner: Mapping[str, Any], list_max_lens: Optional[Mapping[str, int]] = None
+) -> Dict[str, str]:
     return [
         (
             key,
@@ -72,7 +87,9 @@ def prepare_numpy_dtype(inner, list_max_lens=None):
 
 
 class QuickAndDirtyTableDumper(Output):
-    def output(self, world, **kwargs):
+    """Simple tabular output."""
+
+    def output(self, world: World, **kwargs) -> None:
         if not world.cells:
             return np.zeros(0)
 
@@ -104,7 +121,13 @@ class QuickAndDirtyTableDumper(Output):
         return array
 
     def write(
-        self, world, file_name, time=None, overwrite=False, output_count=0, **kwargs
+        self,
+        world: World,
+        file_name: str,
+        time: Optional[float] = None,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
     ):
         np.savez(
             check_overwrite(

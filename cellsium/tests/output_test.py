@@ -297,9 +297,9 @@ def test_render_debug(reset_state, simulator, tmpdir, add_cell_zoo, chdir):
 
 
 def test_render_bytescale_nochange():
-    input = np.zeros((256, 256), dtype=np.uint8)
+    input_data = np.zeros((256, 256), dtype=np.uint8)
 
-    assert id(bytescale(input)) == id(input)
+    assert id(bytescale(input_data)) == id(input_data)
 
 
 def test_render_add_if_uneven():

@@ -1,7 +1,9 @@
+"""Mesh output in the STL format."""
 import numpy as np
 from stl import Mesh, stl
 from tunable import Tunable
 
+from ..simulation.simulator import World
 from . import (
     Output,
     OutputReproducibleFiles,
@@ -13,14 +15,16 @@ from . import (
 class MeshCellScaleFactor(Tunable):
     """Scale factor for mesh output"""
 
-    default = 1.0
+    default: float = 1.0
 
 
 class MeshOutput(Output):
+    """Mesh output in the STL format."""
+
     def __init__(self):
         super().__init__()
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         meshes = []
 
         # for boundary in world.boundaries:
@@ -47,7 +51,14 @@ class MeshOutput(Output):
 
         return meshes
 
-    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
+    ) -> None:
         meshes = self.output(world)
 
         stl_meshes = []
@@ -76,11 +87,11 @@ class MeshOutput(Output):
             )
         )
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
         # ax = fig.add_subplot(111, projection='3d')
         # ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2])
         # ax.set_aspect('equal', 'datalim')
-        raise RuntimeError('Unsupported')
+        raise RuntimeError("Unsupported")
 
 
 __all__ = ['MeshOutput']

@@ -1,18 +1,29 @@
+"""CLI package, home to the individual entry points."""
 from pathlib import Path
+from typing import Any, Optional
 
 from ..model import PlacedCell, SizerCell
+from ..output import Output
 from ..simulation.placement import PlacementSimulation
 from ..simulation.simulator import Simulator
 
 # class Cell(PlacedCell, TimerCell):
+#    """Cell."""
 #     pass
 
 
 class Cell(PlacedCell, SizerCell):
+    """Cell."""
+
     pass
 
 
-def initialize_simulator():
+def initialize_simulator() -> Simulator:
+    """
+    Constructor helper for a simulator.
+
+    :return: Simulator instance
+    """
     simulator = Simulator()
     ps = PlacementSimulation()
 
@@ -21,7 +32,21 @@ def initialize_simulator():
     return simulator
 
 
-def initialize_cells(simulator, count=0, cell_type=None, sequence=None):
+def initialize_cells(
+    simulator: Simulator,
+    count: int = 0,
+    cell_type: Optional[PlacedCell] = None,
+    sequence: Any = None,
+):
+    """
+    Initialize cells and add them to a simulator.
+
+    :param simulator: Simulator to add cells to.
+    :param count: Count of cells to generate
+    :param cell_type: cell type to use
+    :param sequence: Random number sequence to use
+    :return: None
+    """
     if cell_type is None:
         cell_type = Cell
 
@@ -34,9 +59,9 @@ def initialize_cells(simulator, count=0, cell_type=None, sequence=None):
         # handling for items which are generated jointly,
         # but need to go to separate kwargs
         for k, v in list(init_kwargs.items()):
-            if '__' in k:
+            if "__" in k:
                 del init_kwargs[k]
-                k_fragments = k.split('__')
+                k_fragments = k.split("__")
                 for inner_k, inner_v in zip(k_fragments, v):
                     init_kwargs[inner_k] = inner_v
 
@@ -45,11 +70,18 @@ def initialize_cells(simulator, count=0, cell_type=None, sequence=None):
         simulator.add(cell)
 
 
-def add_output_prefix(output_name, output=None):
+def add_output_prefix(output_name: str, output: Output) -> str:
+    """
+    Adds an prefix to an output filename.
+
+    :param output_name: Output name
+    :param output: Output object
+    :return: Name
+    """
     output_name = Path(output_name)
 
     output_name = output_name.parent / (
-        output.__class__.__name__ + '-' + output_name.name
+        output.__class__.__name__ + "-" + output_name.name
     )
 
     return str(output_name)

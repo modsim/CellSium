@@ -97,3 +97,17 @@ def test_old_pymunk_mock(
 def test_patch_sys_modules(patch_sys_modules):
     with patch_sys_modules(remove=None):
         sys.modules['some_non_existing_lib'] = None
+
+
+def test_instantiate_protocols():
+    # function to get the lines covered
+    from ..typing import AnyFunction, KwargFunction
+
+    def nop(self, *args, **kwargs):
+        pass
+
+    AnyFunction.__init__ = nop
+    AnyFunction()(None)
+
+    KwargFunction.__init__ = nop
+    KwargFunction()(None, dummy=None)

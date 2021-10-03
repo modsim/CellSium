@@ -1,3 +1,6 @@
+"""Cell parameter random initializations."""
+from typing import Any, Dict
+
 import numpy as np
 
 from ..parameters import (
@@ -23,10 +26,14 @@ from ..parameters import (
 )
 from ..random import RRF, enforce_bounds
 
+RandomSequenceType = Dict[str, Any]
+
 
 class RandomWidthLength:
+    """Random initializations for cell width/lengths."""
+
     @staticmethod
-    def random_sequences(sequence):
+    def random_sequences(sequence: RRF) -> RandomSequenceType:
 
         assert NewCellLength1Mean.value > NewCellWidthMean.value
         assert NewCellLength2Mean.value > NewCellWidthMean.value
@@ -68,8 +75,10 @@ class RandomWidthLength:
 
 
 class RandomBentRod:
+    """Random initializations for cell bent radii."""
+
     @staticmethod
-    def random_sequences(sequence):
+    def random_sequences(sequence: RRF) -> RandomSequenceType:
         return dict(
             bend_overall=sequence.uniform(
                 NewCellBendOverallLower.value,
@@ -85,8 +94,10 @@ class RandomBentRod:
 
 
 class RandomPosition:
+    """Random initializations for cell positions."""
+
     @staticmethod
-    def random_sequences(sequence):
+    def random_sequences(sequence: RRF) -> RandomSequenceType:
         return dict(
             position=RRF.compose(
                 lambda radius, angle: [
@@ -100,12 +111,16 @@ class RandomPosition:
 
 
 class RandomAngle:
+    """Random initializations for cell angles."""
+
     @staticmethod
-    def random_sequences(sequence):
+    def random_sequences(sequence: RRF) -> RandomSequenceType:
         return dict(angle=RRF.wrap(sequence.uniform(0, 360.0), np.radians))
 
 
 class RandomFluorescence:
+    """Random initializations for fluorescences."""
+
     @staticmethod
-    def random_sequences(sequence):
+    def random_sequences(sequence: RRF) -> RandomSequenceType:
         return dict(fluorescences=sequence.uniform(0, 360.0, (1,)))

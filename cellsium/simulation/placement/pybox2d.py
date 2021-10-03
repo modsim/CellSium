@@ -1,7 +1,9 @@
+"""Placement simulation using Box2D physics engine."""
 # noinspection PyPep8Naming
 import Box2D as B2D
 import numpy as np
 
+from ...model import PlacedCell
 from .base import (
     PhysicalPlacement,
     PlacementSimulation,
@@ -12,7 +14,7 @@ from .base import (
 
 class Box2D(PhysicalPlacement, PlacementSimulation):
 
-    verbose = False
+    verbose: bool = False
 
     def __init__(self):
         self.world = B2D.b2World()
@@ -20,7 +22,7 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
 
         super().__init__()
 
-    def add_boundary(self, coordinates):
+    def add_boundary(self, coordinates: np.ndarray) -> None:
         coordinates = np.array(coordinates)
 
         for start, stop in zip(coordinates, coordinates[1:]):
@@ -31,7 +33,7 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
                 )
             )
 
-    def add(self, cell):
+    def add(self, cell: PlacedCell) -> None:
         # Box2D only allows for 16 vertices per body,
         # and the current implementation would vastly exceed that
         # hence only simplifications
@@ -57,12 +59,12 @@ class Box2D(PhysicalPlacement, PlacementSimulation):
 
         self.cell_bodies[cell] = body
 
-    def remove(self, cell):
+    def remove(self, cell: PlacedCell) -> None:
         self.world.DestroyBody(self.cell_bodies[cell])
 
         del self.cell_bodies[cell]
 
-    def step(self, timestep):
+    def step(self, timestep: float) -> None:
         velocity_iter, position_iter = 6, 30
         self.world.Step(timestep, velocity_iter, position_iter)
 

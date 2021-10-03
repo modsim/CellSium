@@ -1,13 +1,17 @@
+"""Ground truth outputs in COCO, YOLO and a generic mask format."""
 import json
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
+from typing import Iterable
 
 import cv2
 import numpy as np
 from tunable import Tunable
 
-from . import Output, OutputReproducibleFiles
+from ..model import CellGeometry
+from ..simulation.simulator import World
+from . import Output, OutputReproducibleFiles, ShapeType
 from .render import (
     PlainRenderer,
     RenderChannels,
@@ -39,7 +43,7 @@ BBoxContour = namedtuple(
 )
 
 
-def get_bbox_for_cell(cell, shape):
+def get_bbox_for_cell(cell: CellGeometry, shape: ShapeType) -> BBoxContour:
     points = get_canvas_points_for_cell(cell, image_height=shape[0])
 
     x_min, x_max = points[:, 0].min(), points[:, 0].max()
@@ -76,7 +80,7 @@ def get_bbox_for_cell(cell, shape):
     )
 
 
-def is_completely_within(bbox):
+def is_completely_within(bbox: BBoxContour) -> bool:
     return (
         0 <= bbox.rel_x_min <= 1
         and 0 <= bbox.rel_x_max <= 1
@@ -118,20 +122,20 @@ def mkdirs(*args):
 class GroundTruthOnlyCompleteCells(Tunable):
     """Whether to omit cells which would not be completely visible."""
 
-    default = True
+    default: bool = True
 
 
 class GroundTruthOnlyCompleteCellsInImages(Tunable):
     """Whether to omit cells in rendered images which would not be completely visible,
     only active if GroundTruthOnlyCompleteCells is set as well."""
 
-    default = True
+    default: bool = True
 
 
 class GroundTruthMaskCoordinateResolution(Tunable):
     """Resolution for ground truth coordinate data (e.g. JSON files)."""
 
-    default = 0.1
+    default: bool = 0.1
 
 
 class GroundTruthOutput(Output, Output.Virtual):
@@ -153,21 +157,29 @@ class GroundTruthOutput(Output, Output.Virtual):
             )
         )
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         raise RuntimeError("GroundTruthOutput s only support writing.")
 
-    def _write_channels(self, world, filenames, overwrite=True):
+    def _write_channels(
+        self, world: World, filenames: Iterable[str], overwrite: bool = True
+    ) -> None:
         for image_file, channel in zip(filenames, self.channels):
             channel.write(world, str(image_file), overwrite=overwrite, output_count=-1)
             break  # only one channel supported
 
-    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
+    def _write_initializations(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         pass
 
-    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+    def _write_perform(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         pass
 
-    def write(self, world, file_name, overwrite=False, **kwargs):
+    def write(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         self.current += 1
 
         if self.current == 0:
@@ -177,7 +189,11 @@ class GroundTruthOutput(Output, Output.Virtual):
 
 
 class YOLOOutput(GroundTruthOutput):
-    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
+    """Output in the YOLO format."""
+
+    def _write_initializations(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         base_path = Path(file_name)
         self.image_path = base_path  # / 'images'
         self.label_path = base_path  # / 'labels'
@@ -192,7 +208,9 @@ class YOLOOutput(GroundTruthOutput):
 
             (base_path / 'classes.txt').write_text("cell\n")
 
-    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+    def _write_perform(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         shape = self.canvas_shape
         digits = self.significant_digits
 
@@ -230,7 +248,7 @@ class YOLOOutput(GroundTruthOutput):
         text_file.write_text("\n".join(lines))
 
 
-def binary_to_rle(mask):
+def binary_to_rle(mask: np.ndarray) -> np.ndarray:
     mask = mask.astype(bool).ravel(order='F')
 
     total = len(mask)
@@ -246,7 +264,7 @@ def binary_to_rle(mask):
     return lens
 
 
-def convert_points_to_rle(points):
+def convert_points_to_rle(points: np.ndarray) -> np.ndarray:
     mask = PlainRenderer.new_canvas()
     mask = PlainRenderer.render_cells(mask, [points], fast=True)
     mask = mask > 0.5
@@ -257,16 +275,18 @@ def convert_points_to_rle(points):
 class COCOEncodeRLE(Tunable):
     """Whether to encode segmentation data as RLE format."""
 
-    default = False
+    default: bool = False
 
 
 class COCOOutputStuff(Tunable):
     """Whether to output dense stuffthingmaps along the COCO data."""
 
-    default = False
+    default: bool = False
 
 
 class COCOOutput(GroundTruthOutput):
+    """Output in the COCO format."""
+
     def __init__(self):
         super().__init__()
 
@@ -303,7 +323,7 @@ class COCOOutput(GroundTruthOutput):
         self.annotation_file = None
 
     @staticmethod
-    def now():
+    def now() -> str:
         if OutputReproducibleFiles.value:
             return '1970-01-01 00:00:00'
         else:
@@ -314,7 +334,9 @@ class COCOOutput(GroundTruthOutput):
             with self.annotation_file.open('w+') as fp:
                 json.dump(self.coco_structure, fp, indent=' ' * 4)
 
-    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
+    def _write_initializations(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         base_path = Path(file_name)
         self.image_path = base_path / 'train'
 
@@ -333,7 +355,9 @@ class COCOOutput(GroundTruthOutput):
 
             self.annotation_file = base_path / 'annotations.json'
 
-    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+    def _write_perform(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         shape = self.canvas_shape
         digits = self.significant_digits
         write_stuff = COCOOutputStuff.value
@@ -413,18 +437,22 @@ class COCOOutput(GroundTruthOutput):
 class MaskOutputBinary(Tunable):
     """Whether GenericMaskOutput masks should be binary or continuous"""
 
-    default = True
+    default: bool = True
 
 
 class MaskOutputCellValue(Tunable):
     """Value for foreground in GenericMaskOutput masks"""
 
-    default = 255
+    default: bool = 255
 
 
 class GenericMaskOutput(GroundTruthOutput):
+    """Generic mask output (i.e. directories of files)."""
+
     @staticmethod
-    def generate_cells_mask(cells, cell_value=1, binary=True):
+    def generate_cells_mask(
+        cells: Iterable[CellGeometry], cell_value: int = 1, binary: bool = True
+    ) -> np.ndarray:
         mask = PlainRenderer.new_canvas()
 
         mask = PlainRenderer.render_cells(mask, cells, fast=True)
@@ -437,10 +465,12 @@ class GenericMaskOutput(GroundTruthOutput):
         return mask
 
     @staticmethod
-    def imwrite(*args, **kwargs):
+    def imwrite(*args, **kwargs) -> None:
         return PlainRenderer.imwrite(*args, **kwargs)
 
-    def _write_initializations(self, world, file_name, overwrite=False, **kwargs):
+    def _write_initializations(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         base_path = Path(file_name)
         self.image_path = base_path / 'images'
         self.mask_path = base_path / 'masks'
@@ -453,7 +483,9 @@ class GenericMaskOutput(GroundTruthOutput):
 
             mkdirs(base_path, self.image_path, self.mask_path)
 
-    def _write_perform(self, world, file_name, overwrite=False, **kwargs):
+    def _write_perform(
+        self, world: World, file_name: str, overwrite: bool = False, **kwargs
+    ) -> None:
         shape = self.canvas_shape
 
         token = '%012d' % self.current

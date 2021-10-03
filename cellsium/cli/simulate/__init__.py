@@ -1,64 +1,80 @@
+"""Simulation CLI entrypoint."""
 import logging
 import sys
+from argparse import Namespace
 from time import time
+from typing import Iterable, Optional
 
 import numpy as np
 from tunable import Tunable
 
 from ...output import Output
 from ...parameters import NewCellCount, h_to_s, s_to_h
+from ...simulation.simulator import Simulator, World
 from .. import add_output_prefix, initialize_cells, initialize_simulator
 
 
 class SimulationDuration(Tunable):
     """Time (simulated) the simulation should run"""
 
-    default = 12.0
+    default: float = 12.0
 
 
 class SimulationOutputInterval(Tunable):
     """Time intervals (simulated) at which an output should be written"""
 
-    default = 0.25
+    default: float = 0.25
 
 
 class SimulationTimestep(Tunable):
     """Time step at which the simulation state should be calculated"""
 
-    default = 1.0 / 60.0
+    default: float = 1.0 / 60.0
 
 
 class SimulationOutputFirstState(Tunable):
     """Whether to output the first state"""
 
-    default = False
+    default: bool = False
 
 
 class BoundariesFile(Tunable):
     """Boundaries file (in DXF format) to add boundaries/geometrical constraints"""
 
-    default = ""
+    default: str = ""
 
 
 class BoundariesScaleFactor(Tunable):
     """Scale factor for the boundaries"""
 
-    default = 1.0
+    default: float = 1.0
 
 
 log = logging.getLogger(__name__)
 
 
-def add_boundaries_from_dxf(file_name, simulator, scale_factor=1.0):
+def add_boundaries_from_dxf(
+    file_name: str, simulator: Simulator, scale_factor: float = 1.0
+) -> None:
+    """
+    Add boundaries from a DXF file.
+    Supported are LWPolyline and Polyline objects.
+
+    :param file_name: dxf file name
+    :param simulator: Simulator instance to add the boundaries to
+    :param scale_factor: Scale factor for the geometry
+    :return: None
+    """
     import ezdxf
+    from ezdxf.entities import LWPolyline, Polyline
 
     dxf = ezdxf.readfile(file_name)
 
     for item in dxf.modelspace():
         points = None
-        if item.dxftype() == 'LWPOLYLINE':
+        if isinstance(item, LWPolyline):
             points = np.array(list(item.get_points()))[:, :2]
-        elif item.dxftype() == 'POLYLINE':
+        elif isinstance(item, Polyline):
             points = np.array(list(item.points()))[:, :2]
         else:
             log.warning("Warning, unknown type: %r", item.dxftype())
@@ -69,21 +85,41 @@ def add_boundaries_from_dxf(file_name, simulator, scale_factor=1.0):
             simulator.add_boundary(points)
 
 
-def prepare_output_name(output_name, output, prefix):
+def prepare_output_name(output_name: str, output: Output, prefix: str) -> str:
+    """
+    Prepare an output name.
+
+    :param output_name: Output name
+    :param output: Output object
+    :param prefix: Prefix
+    :return: Output name
+    """
     if prefix:
         output_name = add_output_prefix(output_name, output=output)
     return output_name
 
 
 def perform_outputs(
-    world,
-    simulation_time,
-    outputs,
-    output_name=None,
-    overwrite=False,
-    prefix=False,
-    output_count=0,
-):
+    world: World,
+    simulation_time: float,
+    outputs: Iterable[Output],
+    output_name: Optional[str] = None,
+    overwrite: bool = False,
+    prefix: bool = False,
+    output_count: int = 0,
+) -> None:
+    """
+    Performs the output operations configured.
+
+    :param world: World to output
+    :param simulation_time: Simulation timepoint
+    :param outputs: Outputs
+    :param output_name: Name to output to
+    :param overwrite: Whether to overwrite
+    :param prefix: Whether to prefix the outputs with the name of the Output type
+    :param output_count: The count of already outputted timesteps
+    :return: None
+    """
     log.debug("Outputting simulation state at %.2f h" % (s_to_h(simulation_time),))
     for output in outputs:
         output_before = time()
@@ -107,7 +143,13 @@ def perform_outputs(
         )
 
 
-def subcommand_main(args):
+def subcommand_main(args: Namespace) -> None:
+    """
+    Entry point for the 'simulate' subcommand.
+
+    :param args: pre-parsed arguments
+    :return: None
+    """
     simulator = initialize_simulator()
 
     if BoundariesFile.value != '':

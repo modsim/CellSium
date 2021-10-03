@@ -1,24 +1,28 @@
+"""Rendering CLI utility, render a simulation state saved using jsonpickle."""
+
+from argparse import ArgumentParser, Namespace
+
 import jsonpickle
 
 from ...output import Output
 
 
-def subcommand_argparser(parser):
+def subcommand_argparser(parser: ArgumentParser) -> None:
     """
     Handle the argument parser for the 'render' subcommand.
 
-    :param parser: argument parser
+    :param parser: Argument parser
     :return: None
     """
     parser.add_argument('-i', '--input-file', dest='input', default=None, required=True)
 
 
-def subcommand_main(args):
+def subcommand_main(args: Namespace) -> None:
     """
-    Entrypoint for the 'render' subcommand.
+    Entry point for the 'render' subcommand.
 
-    :param args: arguments to be passed
-    :return:
+    :param args: Pre-parsed arguments
+    :return: None
     """
     output = Output()
 

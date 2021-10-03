@@ -1,3 +1,4 @@
+"""Output as Trackmate XML lineage files, compatible with the JuNGLE extensions."""
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -5,6 +6,7 @@ from pathlib import Path
 from tunable import Tunable
 
 from ..parameters import Calibration, Height, Width, um_to_pixel
+from ..simulation.simulator import World
 from . import Output, check_overwrite, ensure_path_and_extension
 
 
@@ -12,13 +14,13 @@ class TrackMateXMLExportFluorescences(Tunable):
     """Names for the fluorescences for the JuNGLE TrackMate format"""
 
     # default = ''
-    default = 'Crimson,YFP'
+    default: str = 'Crimson,YFP'
 
 
 class TrackMateXMLExportLengthTypo(Tunable):
     """Whether to output in the classic JuNGLE TrackMate format"""
 
-    default = True
+    default: bool = True
 
 
 EMPTY_TRACKMATE_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -199,7 +201,7 @@ class TrackMateXML(Output):
         self.all_tracks = self.root.find('Model/AllTracks')
         self.filtered_tracks = self.root.find('Model/FilteredTracks')
 
-    def output(self, world, time=0.0, **kwargs):
+    def output(self, world: World, time: float = 0.0, **kwargs) -> None:
         frame_counter = self.frame_counter
 
         self.frame_counter += 1
@@ -310,7 +312,14 @@ class TrackMateXML(Output):
         self.all_spots.attrib['nspots'] = str(self.spot_counter)
 
     # noinspection PyMethodOverriding
-    def write(self, world, file_name, time=0.0, overwrite=False, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        time: float = 0.0,
+        overwrite: bool = False,
+        **kwargs
+    ) -> None:
         self.output(world, time=time)
 
         self.image_data['filename'] = Path(
@@ -323,7 +332,7 @@ class TrackMateXML(Output):
 
         self.xml.write(file_name)
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
         raise RuntimeError('Unsupported')
 
 

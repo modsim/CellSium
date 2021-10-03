@@ -1,23 +1,27 @@
+"""Output using matplotlib."""
 import warnings
 
 from matplotlib import pyplot
 from tunable import Tunable
 
 from ..parameters import Height, Width
+from ..simulation.simulator import World
 from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class MicrometerPerCm(Tunable):
-    default = 2.5
+    default: float = 2.5
 
 
 class PlotRenderer(Output, Output.Default):
+    """Output using matplotlib."""
+
     def __init__(self):
         super().__init__()
 
         self.fig = self.ax = None
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         if self.fig is None:
             self.fig = pyplot.figure(
                 figsize=(
@@ -51,7 +55,14 @@ class PlotRenderer(Output, Output.Default):
 
         return fig, ax
 
-    def write(self, world, file_name, output_count=0, overwrite=False, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        output_count: int = 0,
+        overwrite: bool = False,
+        **kwargs
+    ) -> None:
         fig, ax = self.output(world)
 
         extensions = ['.png'] + [
@@ -69,7 +80,7 @@ class PlotRenderer(Output, Output.Default):
             )
         )
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
         if self.fig:
             if not pyplot.fignum_exists(self.fig.number):
                 raise KeyboardInterrupt
@@ -81,4 +92,4 @@ class PlotRenderer(Output, Output.Default):
         self.fig.canvas.flush_events()
 
 
-__all__ = ['PlotRenderer']
+__all__ = ['PlotRenderer', 'MicrometerPerCm']

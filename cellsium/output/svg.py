@@ -1,16 +1,19 @@
+"""Output as SVG vector images."""
 # noinspection PyPep8Naming
 import xml.etree.ElementTree as ET
 
+import numpy as np
 from tunable import Tunable
 
 from ..parameters import Height, Width
+from ..simulation.simulator import World
 from . import Output, check_overwrite, ensure_path_and_extension_and_number
 
 
 class MicrometerPerCm(Tunable):
     """Calibration for outputs, micrometer per centimeter"""
 
-    default = 2.5
+    default: float = 2.5
 
 
 class SvgRenderer(Output):
@@ -55,10 +58,10 @@ class SvgRenderer(Output):
         self.boundaries_written = False
 
     @staticmethod
-    def points_to_path(points):
+    def points_to_path(points: np.ndarray) -> str:
         return 'M' + (''.join('L%f %f' % tuple(point) for point in points))[1:] + 'Z'
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
 
         if not self.boundaries_written:
 
@@ -78,7 +81,14 @@ class SvgRenderer(Output):
             cell_path.attrib['class'] = 'cell'
             cell_path.attrib['d'] = self.points_to_path(cell.points_on_canvas())
 
-    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
+    ) -> None:
         self.output(world)
         self.xml.write(
             check_overwrite(
@@ -88,7 +98,7 @@ class SvgRenderer(Output):
             encoding='utf-8',
         )
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
         raise RuntimeError('Unsupported')
 
 

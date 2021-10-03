@@ -1,3 +1,4 @@
+"""Placement simulation package, contains the placement simulators."""
 from .pymunk import Chipmunk
 
 try:

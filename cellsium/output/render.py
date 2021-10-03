@@ -1,5 +1,7 @@
+"""Photorealistic rendered output."""
 import os
 import warnings
+from typing import Dict, Iterator, Optional, Set, Tuple
 
 import cv2
 import numpy as np
@@ -12,9 +14,10 @@ from scipy.ndimage.interpolation import rotate
 from tifffile import TiffWriter
 from tunable import Tunable
 
-from ..model import WithFluorescence
+from ..model import CellGeometry, WithFluorescence
 from ..parameters import Height, Width, um_to_pixel
 from ..random import RRF
+from ..simulation.simulator import World
 from . import (
     Output,
     check_overwrite,
@@ -24,7 +27,7 @@ from . import (
 from .plot import MicrometerPerCm
 
 
-def bytescale(image):
+def bytescale(image: np.ndarray) -> np.ndarray:
     if image.dtype == np.uint8:
         return image
 
@@ -35,7 +38,9 @@ def bytescale(image):
         return (255 * ((image - low) / (high - low))).astype(np.uint8)
 
 
-def noise_attempt(times=5, m=10, n=512, r=None):
+def noise_attempt(
+    times: int = 5, m: int = 10, n: int = 512, r: Optional[Iterator[np.ndarray]] = None
+) -> np.ndarray:
     # noinspection PyShadowingNames
     def make_rand(n, r):
         return interp1d(
@@ -65,30 +70,32 @@ def noise_attempt(times=5, m=10, n=512, r=None):
     return the_sum
 
 
-def gaussian(array, dst=None, sigma=1.0):
+def gaussian(
+    array: np.ndarray, dst: np.ndarray = None, sigma: float = 1.0
+) -> np.ndarray:
     return cv2.GaussianBlur(array, (0, 0), sigmaX=um_to_pixel(sigma), dst=dst)
 
 
 class LuminanceBackground(Tunable):
     """Luminance (lightness) of the background, in 0-1 units."""
 
-    default = 0.17
+    default: float = 0.17
 
 
 class LuminanceCell(Tunable):
     """Luminance (lightness) of cells, in 0-1 units."""
 
-    default = 0.075
+    default: float = 0.075
 
 
-def add_if_uneven(value, add=1):
+def add_if_uneven(value: int, add: int = 1) -> int:
     if (value % 2) == 0:
         return value
     else:
         return value + add
 
 
-def new_canvas(dtype=np.float32):
+def new_canvas(dtype=np.float32) -> np.ndarray:
     width, height = int(um_to_pixel(Width.value)), int(um_to_pixel(Height.value))
     # make even
     width, height = add_if_uneven(width), add_if_uneven(height)
@@ -99,10 +106,10 @@ def new_canvas(dtype=np.float32):
 class OpenCVimshow(Tunable):
     """Show results using OpenCV"""
 
-    default = False
+    default: bool = False
 
 
-def prepare_patch(coordinates, **kwargs):
+def prepare_patch(coordinates: np.ndarray, **kwargs) -> MatplotlibPathPatch:
     actions = [MatplotlibPath.MOVETO] + [MatplotlibPath.LINETO] * (len(coordinates) - 1)
 
     if 'closed' in kwargs:
@@ -116,7 +123,7 @@ def prepare_patch(coordinates, **kwargs):
     return patch
 
 
-def scale_points_relative(points, scale_points=1.0):
+def scale_points_relative(points: np.ndarray, scale_points: float = 1.0) -> np.ndarray:
     if scale_points == 1.0:
         return points
 
@@ -126,7 +133,7 @@ def scale_points_relative(points, scale_points=1.0):
     return points
 
 
-def scale_points_absolute(points, delta=0.0):
+def scale_points_absolute(points: np.ndarray, delta: float = 0.0) -> np.ndarray:
     if delta == 0.0:
         return points
 
@@ -138,7 +145,9 @@ def scale_points_absolute(points, delta=0.0):
 
 
 # noinspection PyUnusedLocal
-def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0, **kwargs):
+def render_on_canvas_cv2(
+    canvas: np.ndarray, array_of_points: np.ndarray, scale_points: float = 1.0, **kwargs
+) -> np.ndarray:
     for points in array_of_points:
         points = scale_points_relative(points, scale_points)
         cv2.fillPoly(canvas, points[np.newaxis].astype(np.int32), 1.0)
@@ -147,8 +156,11 @@ def render_on_canvas_cv2(canvas, array_of_points, scale_points=1.0, **kwargs):
 
 
 def render_on_canvas_matplotlib(
-    canvas, array_of_points, scale_points=1.0, over_sample=1
-):
+    canvas: np.ndarray,
+    array_of_points: np.ndarray,
+    scale_points: float = 1.0,
+    over_sample: int = 1,
+) -> np.ndarray:
     interaction_state = pyplot.isinteractive()
 
     pyplot.ioff()
@@ -207,7 +219,9 @@ def render_on_canvas_matplotlib(
     return canvas_data
 
 
-def get_canvas_points_raw(cell, image_height=None):
+def get_canvas_points_raw(
+    cell: CellGeometry, image_height: Optional[Tuple[int, int]] = None
+) -> np.ndarray:
     points = um_to_pixel(cell.points_on_canvas())
 
     if image_height:
@@ -217,7 +231,9 @@ def get_canvas_points_raw(cell, image_height=None):
     return points
 
 
-def get_canvas_points_for_cell(cell, image_height=None):
+def get_canvas_points_for_cell(
+    cell: CellGeometry, image_height: Optional[Tuple[int, int]] = None
+) -> np.ndarray:
     points = get_canvas_points_raw(cell, image_height=image_height)
 
     if RoiOutputScaleFactor.value != 1.0:
@@ -228,12 +244,12 @@ def get_canvas_points_for_cell(cell, image_height=None):
     return points
 
 
-def cv2_has_write_support(extension):
+def cv2_has_write_support(extension: str) -> bool:
     try:
         # Suppress a warning, apparently in some old JPEG2000
         # reading code there were security vulnerabilities
         # Since we only want to write here, it should be fine.
-        os.environ['OPENCV_IO_ENABLE_JASPER'] = '1'
+        os.environ["OPENCV_IO_ENABLE_JASPER"] = "1"
         return cv2.haveImageWriter(extension)
     except cv2.error:
         # why does this function throw errors? just return True or False ...
@@ -267,7 +283,12 @@ class PlainRenderer(Output):
         return new_canvas()
 
     @staticmethod
-    def imwrite(name, img, overwrite=False, output_count=None):
+    def imwrite(
+        name: str,
+        img: np.ndarray,
+        overwrite: bool = False,
+        output_count: Optional[int] = None,
+    ) -> bool:
         name = check_overwrite(
             ensure_path_and_extension_and_number(
                 name,
@@ -280,21 +301,23 @@ class PlainRenderer(Output):
 
         return cv2.imwrite(name, img)
 
-    def debug_output(self, name, array):
+    def debug_output(self, name: str, array: np.ndarray) -> None:
         if not self.write_debug_output:
             return
 
-        self.imwrite('render-%s.png' % (name,), bytescale(array), overwrite=True)
+        self.imwrite("render-%s.png" % (name,), bytescale(array), overwrite=True)
 
     @staticmethod
-    def render_cells(canvas, array_of_points, fast=False):
+    def render_cells(
+        canvas: np.ndarray, array_of_points: np.ndarray, fast: bool = False
+    ) -> np.ndarray:
         if fast:
             canvas = render_on_canvas_cv2(canvas, array_of_points)
         else:
             canvas = render_on_canvas_matplotlib(canvas, array_of_points)
         return canvas
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         canvas = self.new_canvas()
 
         array_of_points = [
@@ -308,10 +331,17 @@ class PlainRenderer(Output):
         return canvas
 
     @staticmethod
-    def convert(image, max_value=255):
+    def convert(image: np.ndarray, max_value: int = 255) -> np.ndarray:
         return (np.clip(image, 0, 1) * max_value).astype(np.uint8)
 
-    def write(self, world, file_name, overwrite=False, output_count=0, **kwargs):
+    def write(
+        self,
+        world: World,
+        file_name: str,
+        overwrite: bool = False,
+        output_count: int = 0,
+        **kwargs
+    ) -> None:
         self.imwrite(
             file_name,
             self.convert(self.output(world)),
@@ -319,7 +349,7 @@ class PlainRenderer(Output):
             output_count=output_count,
         )
 
-    def display(self, world, **kwargs):
+    def display(self, world: World, **kwargs) -> None:
 
         image = self.output(world)
 
@@ -361,54 +391,54 @@ class PlainRenderer(Output):
 class FluorescenceEmitterKernelSizeW(Tunable):
     """Kernel size for fluorescence emitter placement, width"""
 
-    default = 17
+    default: float = 17
 
 
 class FluorescenceEmitterKernelSizeH(Tunable):
     """Kernel size for fluorescence emitter placement, height"""
 
-    default = 17
+    default: float = 17
 
 
 class FluorescenceEmitterGaussianW(Tunable):
     """Fluorescence emitter placement Gaussian sigma, horizontal"""
 
-    default = 2.5
+    default: float = 2.5
 
 
 class FluorescenceEmitterGaussianH(Tunable):
     """Fluorescence emitter placement Gaussian sigma, vertical"""
 
-    default = 2.5
+    default: float = 2.5
 
 
 class FluorescenceNoiseMean(Tunable):
     """Fluorescence noise mean"""
 
-    default = 0.0
+    default: float = 0.0
 
 
 class FluorescenceNoiseStd(Tunable):
     """Fluorescence noise standard deviation"""
 
-    default = 0.15
+    default: float = 0.15
 
 
 class FluorescenceRatioBackground(Tunable):
     """Fluorescence background ratio"""
 
-    default = 1.0
+    default: float = 1.0
 
 
 class FluorescenceCellSizeFactor(Tunable):
     """Fluorescence cell size to fluorescence factor"""
 
-    default = 500.0
+    default: float = 500.0
 
 
 class FluorescenceRenderer(PlainRenderer):
 
-    channel = 0
+    channel: int = 0
 
     def __init__(self):
         super().__init__()
@@ -422,7 +452,7 @@ class FluorescenceRenderer(PlainRenderer):
             canvas.shape,
         )
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         canvas = self.new_canvas()
 
         int_background = FluorescenceRatioBackground.value
@@ -513,7 +543,7 @@ class FluorescenceRenderer(PlainRenderer):
 
 
 class PhaseContrastRenderer(PlainRenderer):
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         cell_canvas = super().output(world)
 
         background = LuminanceBackground.value * np.ones_like(cell_canvas)
@@ -554,14 +584,14 @@ class PhaseContrastRenderer(PlainRenderer):
 class UnevenIlluminationAdditiveFactor(Tunable):
     """Additive component for the uneven illumination"""
 
-    default = 0.02
+    default: float = 0.02
 
 
 class UnevenIlluminationMultiplicativeFactor(Tunable):
     """Multiplicative factor for the uneven illumination"""
 
-    # default = 0.05
-    default = 0.25
+    # default: float = 0.05
+    default: float = 0.25
 
 
 class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
@@ -572,16 +602,16 @@ class UnevenIlluminationPhaseContrast(PhaseContrastRenderer):
         self.uneven_illumination = None
         self.create_uneven_illumination()
 
-    def new_uneven_illumination(self):
+    def new_uneven_illumination(self) -> np.ndarray:
         empty = self.new_canvas()
         return noise_attempt(
             times=5, m=10, n=max(empty.shape), r=self.random_complex_noise
         )[: empty.shape[0], : empty.shape[1]]
 
-    def create_uneven_illumination(self):
+    def create_uneven_illumination(self) -> np.ndarray:
         self.uneven_illumination = self.new_uneven_illumination()
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         canvas = super().output(world)
 
         self.debug_output('uneven-illumination', self.uneven_illumination)
@@ -609,7 +639,7 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
         self.product_noise = RRF.sequence.normal(1.0, 0.002, empty.shape)
         self.sum_noise = RRF.sequence.normal(0.0, 0.002, empty.shape)
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs):
         canvas = super().output(world)
 
         product_noise = next(self.product_noise)
@@ -628,16 +658,16 @@ class NoisyUnevenIlluminationPhaseContrast(UnevenIlluminationPhaseContrast):
 class RoiOutputScaleFactor(Tunable):
     """Scale factor for the ROI output"""
 
-    default = 1.0
+    default: float = 1.0
 
 
 class RoiOutputScaleDelta(Tunable):
     """Scale delta for the ROI output"""
 
-    default = -4.0
+    default: float = -4.0
 
 
-def collect_subclasses(start):
+def collect_subclasses(start: type) -> Set[type]:
     collector = set()
 
     def _recurse(class_):
@@ -656,25 +686,25 @@ class RenderChannels(Tunable):
     # default = 'NoisyUnevenIlluminationPhaseContrast, FluorescenceRenderer'
 
     @staticmethod
-    def get_mapping():
+    def get_mapping() -> Dict[str, type]:
         return {class_.__name__: class_ for class_ in collect_subclasses(PlainRenderer)}
 
     @classmethod
-    def test(cls, value):
+    def test(cls, value: str) -> bool:
         mapping = cls.get_mapping()
-        for class_ in value.split(','):
+        for class_ in value.split(","):
             if class_.strip() not in mapping:
                 return False
         return True
 
     @classmethod
-    def instantiate(cls):
+    def instantiate(cls) -> PlainRenderer:
         mapping = cls.get_mapping()
         return [mapping[class_.strip()]() for class_ in cls.value.split(',')]
 
 
 class TiffOutput(Output):
-    output_type = np.uint8
+    output_type: np.dtype = np.uint8
 
     def __init__(self):
         self.channels = RenderChannels.instantiate()
@@ -683,7 +713,7 @@ class TiffOutput(Output):
         self.file_name = None
         self.rois = []
 
-    def output(self, world, **kwargs):
+    def output(self, world: World, **kwargs) -> None:
         return [c.output(world) for c in self.channels]
 
     def __del__(self):
@@ -718,7 +748,7 @@ class TiffOutput(Output):
                 metadata=dict(unit='um', Overlays=binary_rois),
             )
 
-    def write(self, world, file_name, **kwargs):
+    def write(self, world: World, file_name: str, **kwargs) -> None:
         self.file_name = file_name
 
         self.current += 1
@@ -741,6 +771,9 @@ class TiffOutput(Output):
 
 
 __all__ = [
+    'RenderChannels',
+    'get_canvas_points_for_cell',
+    'new_canvas',
     'PlainRenderer',
     'FluorescenceRenderer',
     'PhaseContrastRenderer',
