@@ -11,3 +11,4 @@ tifffile
 roifile
 numpy-stl
 ezdxf
+ipython
