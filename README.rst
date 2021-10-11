@@ -23,6 +23,12 @@ CellSium Readme
 
 CellSium - *Cell* *Si*\ mulator for *micro*\ fluidic *m*\ icrocolonies
 
+.. figure:: https://raw.githubusercontent.com/modsim/CellSium/animation/output.gif
+    :align: center
+
+    CellSium example simulation result
+
+
 Front Matter
 ------------
 
