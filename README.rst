@@ -1,5 +1,3 @@
-.. If you read this on hub.docker.com, maybe visit the github page https://github.com/modsim/cellsium
-
 CellSium Readme
 ===============
 
@@ -47,7 +45,7 @@ The documentation to CellSium can be built using `Sphinx <https://www.sphinx-doc
 License
 #######
 
-CellSium is available under the :doc:`BSD license <license>`.
+CellSium is available under the BSD license.
 
 Installation
 ------------
@@ -109,7 +107,7 @@ You can for example run a default simulation by just starting CellSium, the resu
 
     > python -m cellsium
 
-For more in-depth usage examples, please see the :doc:`examples <examples>` section.
+For more in-depth usage examples, please see the examples section.
 
 Docker
 ------

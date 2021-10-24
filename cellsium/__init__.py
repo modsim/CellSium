@@ -2,7 +2,7 @@
 
 __project__ = 'CellSium'
 
-__version__ = '0.0.1'
+__version__ = '1.0.0rc1'
 
 __author__ = 'Christian C. Sachs'
 
