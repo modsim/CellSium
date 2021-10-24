@@ -9,14 +9,14 @@ CellSium Readme
 .. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
    :target: https://cellsium.readthedocs.io/en/latest/
 
-.. image:: https://api.travis-ci.com/modsim/CellSium.svg?branch=main
-   :target: https://app.travis-ci.com/github/modsim/CellSium
+.. image:: https://github.com/modsim/CellSium/actions/workflows/python-test.yml/badge.svg
+   :target: https://github.com/modsim/CellSium/actions/workflows/python-test.yml
 
 .. image:: https://codecov.io/gh/modsim/CellSium/branch/main/graph/badge.svg?token=L36RQXYBW7
     :target: https://codecov.io/gh/modsim/CellSium
 
-.. image:: https://img.shields.io/docker/build/modsim/cellsium.svg
-   :target: https://hub.docker.com/r/modsim/cellsium
+.. image:: https://img.shields.io/badge/Docker-image-green?logo=docker
+   :target: https://github.com/modsim/CellSium/pkgs/container/cellsium
 
 .. image:: https://img.shields.io/pypi/l/cellsium.svg
    :target: https://opensource.org/licenses/BSD-2-Clause
@@ -118,10 +118,10 @@ An alternative to installing CellSium locally is running it via Docker. To run C
 
 .. code-block:: bash
 
-    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` cellsium
+    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` ghcr.io/modsim/cellsium
 
 To use interactive (GUI) elements such as the :code:`PlotRenderer`, an X server must be reachable; under Linux the following command can be used:
 
 .. code-block:: bash
 
-    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` --env DISPLAY=$DISPLAY --volume /tmp/.X11-unix:/tmp/.X11-unix cellsium
+    > docker run --tty --interactive --rm --volume `pwd`:/data --user `id -u` --env DISPLAY=$DISPLAY --volume /tmp/.X11-unix:/tmp/.X11-unix ghcr.io/modsim/cellsium

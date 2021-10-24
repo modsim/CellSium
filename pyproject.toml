@@ -57,7 +57,7 @@ multi_line_output = 3
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov=cellsium -vv --durations=0"
+addopts = "--cov=cellsium --cov-report=xml -vv --durations=0"
 
 [tool.flake8]
 max-line-length = 88

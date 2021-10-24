@@ -1,0 +1,25 @@
+name: Python package
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-versions: [3.8]
+    
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel build
+      - name: Building packages
+        run: python -m build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cellsium-package
+          path: dist/*
