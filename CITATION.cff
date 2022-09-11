@@ -1,0 +1,63 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Sachs
+    given-names: Christian Carsten
+    orcid: https://orcid.org/0000-0001-8848-5775
+
+  - family-names: Ruzaeva
+    given-names: Karina
+    orcid: https://orcid.org/0000-0003-3610-0989
+
+  - family-names: Seiffarth
+    given-names: Johannes
+    orcid: https://orcid.org/0000-0002-2087-9847
+
+  - family-names: Wiechert
+    given-names: Wolfgang
+    orcid: https://orcid.org/0000-0001-8501-0694
+
+  - family-names: Berkels
+    given-names: Benjamin
+    orcid: https://orcid.org/0000-0002-6969-187X
+
+  - family-names: Nöh
+    given-names: Katharina
+    orcid: https://orcid.org/0000-0002-5407-2275
+version: 1.0.0
+title: "CellSium"
+doi: 10.5281/zenodo.6193033
+
+preferred-citation:
+  title: "CellSium: versatile cell simulator for microcolony ground truth generation"
+  type: article
+  journal: Bioinformatics Advances
+  month: 8
+  year: 2022
+  doi: 10.1093/bioadv/vbac053
+  volume: 2
+  issue: 1
+  authors:
+    - family-names: Sachs
+      given-names: Christian Carsten
+      orcid: https://orcid.org/0000-0001-8848-5775
+  
+    - family-names: Ruzaeva
+      given-names: Karina
+      orcid: https://orcid.org/0000-0003-3610-0989
+  
+    - family-names: Seiffarth
+      given-names: Johannes
+      orcid: https://orcid.org/0000-0002-2087-9847
+  
+    - family-names: Wiechert
+      given-names: Wolfgang
+      orcid: https://orcid.org/0000-0001-8501-0694
+  
+    - family-names: Berkels
+      given-names: Benjamin
+      orcid: https://orcid.org/0000-0002-6969-187X
+  
+    - family-names: Nöh
+      given-names: Katharina
+      orcid: https://orcid.org/0000-0002-5407-2275
