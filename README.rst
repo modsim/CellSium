@@ -37,7 +37,13 @@ CellSium is a cell simulator developed for the primary application of generating
 Publication
 ###########
 
-The publication is currently in preparation. If you use CellSium within scientific research, we ask you to cite our publication.
+If you use CellSium within scientific research, we ask you to cite our publication:
+
+    Sachs CC, Ruzaeva K, Seiffarth J, Wiechert W, Berkels B, Nöh K (2022)
+    CellSium: versatile cell simulator for microcolony ground truth generation
+    Bioinformatics Advances, Volume 2, Issue 1, 2022, vbac053, doi: 10.1093/bioadv/vbac053
+
+It is available on the *Bioinformatics Advances* homepage at `DOI: 10.1093/bioadv/vbac053 <https://doi.org/10.1093/bioadv/vbac053>`.
 
 Documentation
 #############
@@ -76,7 +82,7 @@ Usage
 
 Once installed, run CellSium via :code:`python -m cellsium`, specifying the desired entrypoint and options, such as outputs.
 CellSium is built modular, various output modules can be activated simultaneously. To get an overview of the available options,
-use the :code:`--help` switch. Furthermore, the main mode of setting tunable paramters are so called *tunables*, which can
+use the :code:`--help` switch. Furthermore, the main mode of setting tunable parameters are so called *tunables*, which can
 be set from the command line using the :code:`-t` switches. A list of tunables can be shown using the :code:`--tunables-show` argument.
 
 .. code-block:: bash

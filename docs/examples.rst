@@ -25,7 +25,7 @@ For example, the following command will random cell images, and output three dat
         --Output GenericMaskOutput \
         -p
 
-Note how the main mode of configuration of CellSium are *tunables*, these tunable paramters are set using the :code:`-t` argument, followed by :code:`Name=value`. The tunables are explained in the documentation, and can be listed via :code:`--tunables-show` as well.
+Note how the main mode of configuration of CellSium are *tunables*, these tunable parameters are set using the :code:`-t` argument, followed by :code:`Name=value`. The tunables are explained in the documentation, and can be listed via :code:`--tunables-show` as well.
 
 In this example, the output of 64 images of 512x512 size are requested, setting the pixel calibration to 0.0905158 µm per pixel. :code:`ChipmunkPlacementRadius` configures the physical placement and yields denser colonies. The name of the output files/directories is specified using :code:`-o`.
 
