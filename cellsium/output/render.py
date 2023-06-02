@@ -737,7 +737,7 @@ class TiffOutput(Output):
 
         result = result.astype(self.output_type)
 
-        binary_rois = [ImagejRoi.frompoints(**roi).tobytes() for roi in self.rois]
+        binary_rois = [ImagejRoi.frompoints(roi["points"], position=roi["position"], index=roi["index"], t=roi["t"]).tobytes() for roi in self.rois]
 
         with TiffWriter(
             ensure_path_and_extension(self.file_name, '.tif'), imagej=True
