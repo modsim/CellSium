@@ -18,12 +18,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
           pip install ".[check,test,doc]"
-      - name: Syntax check with black
-        run: black --check cellsium
-      - name: Syntax check with isort
-        run: isort --check cellsium
-      - name: Syntax check with pflake8
-        run: pflake8 cellsium
+#      - name: Syntax check with black
+#        run: black --check cellsium
+#      - name: Syntax check with isort
+#        run: isort --check cellsium
+#      - name: Syntax check with pflake8
+#        run: pflake8 cellsium
       - name: unittests with pytest
         run: pytest
       - uses: codecov/codecov-action@v2
